@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workload Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 320px; }
+        .sidebar-item.active { background-color: #f1f5f9; color: #4f46e5; border-right: 4px solid #4f46e5; }
+        .data-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .data-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Chosen Palette: Professional Slate & Indigo -->
+    <!-- Application Structure Plan: 
+         Designed as a multi-view dashboard for daily maintenance. 
+         1. Overview: Quick KPIs (Readiness, Capacity, Total Tasks).
+         2. Team Analysis: Detailed workload bars with 'Slot-In' logic visualization.
+         3. Data Explorer: Table view for identifying tasks missing metadata (Platform/Customer).
+         4. Settings: System configuration for the 32h/16pt limit.
+         This structure facilitates both high-level monitoring and granular task-level fixes.
+    -->
+    <!-- Visualization & Content Choices:
+         - Metrics Grid: For immediate assessment of OGSM goals.
+         - Horizontal Bar Chart (Chart.js): Best for comparing developer loads against a fixed limit line.
+         - Donut Chart (Chart.js): Visualizing Platform (Web/Mobile) distribution.
+         - Data Table: For identifying "Unready" tasks (Readiness Goal).
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex">
+            <div class="p-6 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-600 text-white p-2 rounded-lg"><i class="fa-solid fa-gauge-high"></i></div>
+                    <span class="font-bold text-slate-900 tracking-tight">Workload Tracker</span>
+                </div>
+            </div>
+            <nav class="flex-1 py-4">
+                <button onclick="switchTab('overview')" id="nav-overview" class="sidebar-item active w-full flex items-center gap-3 px-6 py-3 text-sm font-semibold transition-all text-slate-600 hover:bg-slate-50">
+                    <i class="fa-solid fa-house"></i> Overview
+                </button>
+                <button onclick="switchTab('team')" id="nav-team" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm font-semibold transition-all text-slate-600 hover:bg-slate-50">
+                    <i class="fa-solid fa-users"></i> Team Capacity
+                </button>
+                <button onclick="switchTab('data')" id="nav-data" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm font-semibold transition-all text-slate-600 hover:bg-slate-50">
+                    <i class="fa-solid fa-table-list"></i> Data Explorer
+                </button>
+            </nav>
+            <div class="p-4 border-t border-slate-100">
+                <div class="bg-slate-900 rounded-xl p-4 text-white">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Weekly Limit</p>
+                    <p class="text-xl font-bold">32 Hours <span class="text-xs font-normal opacity-60">/ 16 Pts</span></p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto no-scrollbar relative">
+            
+            <!-- Top App Bar -->
+            <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center">
+                <h2 id="view-title" class="text-xl font-bold text-slate-900">System Overview</h2>
+                <div class="flex items-center gap-4">
+                    <div class="hidden sm:flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-100">
+                        <span class="status-dot bg-emerald-500 animate-pulse"></span> Systems Synced
+                    </div>
+                    <button onclick="refreshData()" class="text-slate-400 hover:text-indigo-600 transition-colors"><i class="fa-solid fa-rotate"></i></button>
+                </div>
+            </header>
+
+            <div class="p-8 max-w-6xl mx-auto">
+                
+                <!-- View: Overview -->
+                <section id="view-overview" class="tab-content block">
+                    <p class="text-slate-500 mb-8 max-w-3xl">
+                        This view monitors the core OGSM goals: Reducing developer overload and ensuring task readiness. Use the filters to drill down into specific customer projects.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                        <div class="data-card bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Tasks</span>
+                            <div class="text-3xl font-bold text-slate-900 mt-1">42</div>
+                            <div class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full inline-block mt-2">Space A + B</div>
+                        </div>
+                        <div class="data-card bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Task Readiness</span>
+                            <div class="text-3xl font-bold text-emerald-600 mt-1">92.4%</div>
+                            <div class="text-[10px] font-bold text-slate-400 mt-2">Goal: 95%</div>
+                        </div>
+                        <div class="data-card bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Dev Overload</span>
+                            <div class="text-3xl font-bold text-orange-600 mt-1">7.1%</div>
+                            <div class="text-[10px] font-bold text-slate-400 mt-2">Limit: 32h / 16pt</div>
+                        </div>
+                        <div class="data-card bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Avg. Velocity</span>
+                            <div class="text-3xl font-bold text-slate-900 mt-1">28.5</div>
+                            <div class="text-[10px] font-bold text-slate-400 mt-2">Pts / Sprint</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                            <h3 class="font-bold text-slate-900 mb-6 flex justify-between items-center">
+                                <span>Team Workload Balance</span>
+                                <span class="text-xs font-normal text-slate-400">Target Line: 11 Pts (70%)</span>
+                            </h3>
+                            <div class="chart-container">
+                                <canvas id="workloadChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                            <h3 class="font-bold text-slate-900 mb-6">Platform Mix</h3>
+                            <div class="chart-container" style="height: 200px;">
+                                <canvas id="platformChart"></canvas>
+                            </div>
+                            <div class="mt-8 space-y-3">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-indigo-600"></span> Mobile</span>
+                                    <span class="font-bold">18 Tasks</span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-200"></span> Web</span>
+                                    <span class="font-bold">24 Tasks</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- View: Team Details -->
+                <section id="view-team" class="tab-content hidden">
+                    <p class="text-slate-500 mb-8">
+                        This view analyzes individual developer capacity. The Cloudflare Worker uses this data to "Slot-In" new tasks to the developer with the highest remaining capacity.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="team-grid">
+                        <!-- JS populated cards -->
+                    </div>
+                </section>
+
+                <!-- View: Data Explorer -->
+                <section id="view-data" class="tab-content hidden">
+                    <p class="text-slate-500 mb-8">
+                        Identify tasks that are "Unready" (missing Platform or Customer data). Maintaining this data is required for the automation engine to work.
+                    </p>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400 border-b border-slate-100">
+                                    <th class="px-6 py-4">Task Name</th>
+                                    <th class="px-6 py-4">Space</th>
+                                    <th class="px-6 py-4">Platform</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4">Readiness</th>
+                                </tr>
+                            </thead>
+                            <tbody id="task-table-body" class="divide-y divide-slate-100 text-sm">
+                                <!-- JS populated rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+        // Data State
+        const teamData = [
+            { id: 101, name: "Ali", role: "Mobile Specialist", points: 14, skills: ["Mobile"], avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" },
+            { id: 102, name: "Sarah", role: "Web Specialist", points: 6, skills: ["Web"], avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" },
+            { id: 103, name: "Kevin", role: "Hybrid Developer", points: 10, skills: ["Web", "Mobile"], avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kevin" },
+            { id: 104, name: "Mei", role: "Frontend Dev", points: 8, skills: ["Web"], avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mei" }
+        ];
+
+        const taskData = [
+            { name: "Mobile API Integration", space: "Space A", platform: "Mobile", status: "Planned", ready: true },
+            { name: "Frontend Cleanup", space: "Space B", platform: "Web", status: "In Progress", ready: true },
+            { name: "Client Onboarding", space: "Space A", platform: null, status: "Planned", ready: false },
+            { name: "Database Patch", space: "Space B", platform: "Backend", status: "Planned", ready: true },
+            { name: "Auth Flow Fix", space: "Space A", platform: "Web", status: "To Do", ready: true }
+        ];
+
+        let workloadChart, platformChart;
+
+        function switchTab(tabId) {
+            // Update Navigation
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${tabId}`).classList.add('active');
+            
+            // Update Views
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            
+            // Update Title
+            const titles = { overview: "System Overview", team: "Capacity Analysis", data: "Data Quality Explorer" };
+            document.getElementById('view-title').innerText = titles[tabId];
+
+            if (tabId === 'overview') initCharts();
+            if (tabId === 'team') renderTeam();
+            if (tabId === 'data') renderTasks();
+        }
+
+        function initCharts() {
+            if (workloadChart) workloadChart.destroy();
+            if (platformChart) platformChart.destroy();
+
+            // Workload Bar Chart
+            const workloadCtx = document.getElementById('workloadChart').getContext('2d');
+            workloadChart = new Chart(workloadCtx, {
+                type: 'bar',
+                data: {
+                    labels: teamData.map(d => d.name),
+                    datasets: [{
+                        label: 'Current Load (Points)',
+                        data: teamData.map(d => d.points),
+                        backgroundColor: teamData.map(d => d.points > 11 ? '#f97316' : '#4f46e5'),
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1e293b', padding: 12 }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 16, grid: { borderDash: [5, 5] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Platform Donut Chart
+            const platformCtx = document.getElementById('platformChart').getContext('2d');
+            platformChart = new Chart(platformCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mobile', 'Web'],
+                    datasets: [{
+                        data: [18, 24],
+                        backgroundColor: ['#4f46e5', '#e2e8f0'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function renderTeam() {
+            const grid = document.getElementById('team-grid');
+            grid.innerHTML = teamData.map(dev => {
+                const perc = (dev.points / 16) * 100;
+                const status = dev.points > 11 ? 'Overloaded' : (dev.points > 8 ? 'Near Limit' : 'Stable');
+                const statusColor = dev.points > 11 ? 'text-orange-600 bg-orange-50' : (dev.points > 8 ? 'text-amber-600 bg-amber-50' : 'text-emerald-600 bg-emerald-50');
+
+                return `
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="flex items-center gap-4 mb-6">
+                            <img src="${dev.avatar}" class="w-12 h-12 rounded-full bg-slate-100">
+                            <div>
+                                <h4 class="font-bold text-slate-900">${dev.name}</h4>
+                                <p class="text-xs text-slate-400 font-medium">${dev.role}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-end">
+                                <span class="text-xs font-bold text-slate-400 uppercase">Weekly Load</span>
+                                <span class="text-sm font-bold text-slate-900">${dev.points * 2}h <span class="text-slate-300">/ 32h</span></span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div class="h-full ${dev.points > 11 ? 'bg-orange-500' : 'bg-indigo-600'}" style="width: ${perc}%"></div>
+                            </div>
+                            <div class="flex justify-between items-center pt-2">
+                                <span class="text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wider ${statusColor}">${status}</span>
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">${dev.skills.join(' / ')}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTasks() {
+            const tbody = document.getElementById('task-table-body');
+            tbody.innerHTML = taskData.map(task => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-semibold text-slate-900">${task.name}</td>
+                    <td class="px-6 py-4 text-slate-500">${task.space}</td>
+                    <td class="px-6 py-4">
+                        ${task.platform ? `<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase">${task.platform}</span>` : `<span class="text-red-500 italic text-xs font-medium"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Missing</span>`}
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 font-medium text-xs">${task.status}</td>
+                    <td class="px-6 py-4">
+                        ${task.ready ? `<i class="fa-solid fa-circle-check text-emerald-500"></i>` : `<i class="fa-solid fa-circle-xmark text-slate-300"></i>`}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function refreshData() {
+            // Simulated Refresh
+            const btn = document.querySelector('button[onclick="refreshData()"]');
+            btn.classList.add('animate-spin');
+            setTimeout(() => {
+                btn.classList.remove('animate-spin');
+                initCharts();
+                renderTeam();
+                renderTasks();
+            }, 1000);
+        }
+
+        // Initialize App
+        window.onload = () => {
+            initCharts();
+        };
+    </script>
+</body>
+</html>
