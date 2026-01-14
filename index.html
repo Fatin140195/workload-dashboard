@@ -3,338 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workload Management Dashboard</title>
+    <title>ClickUp Multi-View Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 320px; }
-        .sidebar-item.active { background-color: #f1f5f9; color: #4f46e5; border-right: 4px solid #4f46e5; }
-        .data-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .data-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .tab-btn { border-bottom: 2px solid transparent; transition: all 0.2s; padding: 1.25rem 0.5rem; color: #64748b; font-size: 0.875rem; font-weight: 500; }
+        .tab-btn.active { border-bottom-color: #7c3aed; color: #7c3aed; font-weight: 700; }
+        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
+        .progress-bar { height: 8px; border-radius: 4px; background: #f1f5f9; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.5s ease-out; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="text-slate-800 antialiased">
 
-    <!-- Chosen Palette: Professional Slate & Indigo -->
-    <!-- Application Structure Plan: 
-         Designed as a multi-view dashboard for daily maintenance. 
-         1. Overview: Quick KPIs (Readiness, Capacity, Total Tasks).
-         2. Team Analysis: Detailed workload bars with 'Slot-In' logic visualization.
-         3. Data Explorer: Table view for identifying tasks missing metadata (Platform/Customer).
-         4. Settings: System configuration for the 32h/16pt limit.
-         This structure facilitates both high-level monitoring and granular task-level fixes.
-    -->
-    <!-- Visualization & Content Choices:
-         - Metrics Grid: For immediate assessment of OGSM goals.
-         - Horizontal Bar Chart (Chart.js): Best for comparing developer loads against a fixed limit line.
-         - Donut Chart (Chart.js): Visualizing Platform (Web/Mobile) distribution.
-         - Data Table: For identifying "Unready" tasks (Readiness Goal).
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-
-    <div class="flex h-screen overflow-hidden">
-        
-        <!-- Sidebar Navigation -->
-        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex">
-            <div class="p-6 border-b border-slate-100">
+    <!-- Header & Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <div class="bg-indigo-600 text-white p-2 rounded-lg"><i class="fa-solid fa-gauge-high"></i></div>
-                    <span class="font-bold text-slate-900 tracking-tight">Workload Tracker</span>
+                    <div class="w-9 h-9 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-200">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                    </div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Project Master Console</h1>
+                </div>
+                <nav class="flex gap-8">
+                    <button onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active">Management</button>
+                    <button onclick="switchTab('plan')" id="btn-plan" class="tab-btn">Planning</button>
+                    <button onclick="switchTab('client')" id="btn-client" class="tab-btn">Client Progress</button>
+                    <button onclick="switchTab('delivery')" id="btn-delivery" class="tab-btn">Delivery Schedule</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- 1. MANAGEMENT VIEW -->
+        <section id="view-mgmt" class="tab-content space-y-6">
+            <div class="glass-card p-4 flex flex-wrap gap-4 items-center">
+                <input type="text" id="mgmtSearch" placeholder="Search tasks..." class="flex-1 min-w-[200px] px-4 py-2 border rounded-lg text-sm bg-slate-50">
+                <select id="mgmtClientFilter" class="px-4 py-2 border rounded-lg text-sm bg-white"><option value="">All Clients</option></select>
+                <select id="mgmtStatus" class="px-4 py-2 border rounded-lg text-sm bg-white"><option value="">All Statuses</option></select>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card p-6"><h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Status Distribution</h3><div class="h-64"><canvas id="chartStatus"></canvas></div></div>
+                <div class="glass-card p-6"><h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Workload by Dev</h3><div class="h-64"><canvas id="chartAssignee"></canvas></div></div>
+            </div>
+            <div class="glass-card overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 border-b">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold">Task</th>
+                            <th class="px-6 py-4 font-semibold">Client</th>
+                            <th class="px-6 py-4 font-semibold">Assignee</th>
+                            <th class="px-6 py-4 font-semibold">Status</th>
+                            <th class="px-6 py-4 font-semibold">Urgency</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mgmtTable" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2. PLANNING VIEW -->
+        <section id="view-plan" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 glass-card p-6">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Resource Allocation (Hours)</h3>
+                    <div class="h-80"><canvas id="chartCapacity"></canvas></div>
+                </div>
+                <div class="glass-card p-6 space-y-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase">Capacity Summary</h3>
+                    <div id="capacityList" class="space-y-4"></div>
                 </div>
             </div>
-            <nav class="flex-1 py-4">
-                <button onclick="switchTab('overview')" id="nav-overview" class="sidebar-item active w-full flex items-center gap-3 px-6 py-3 text-sm font-semibold transition-all text-slate-600 hover:bg-slate-50">
-                    <i class="fa-solid fa-house"></i> Overview
-                </button>
-                <button onclick="switchTab('team')" id="nav-team" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm font-semibold transition-all text-slate-600 hover:bg-slate-50">
-                    <i class="fa-solid fa-users"></i> Team Capacity
-                </button>
-                <button onclick="switchTab('data')" id="nav-data" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm font-semibold transition-all text-slate-600 hover:bg-slate-50">
-                    <i class="fa-solid fa-table-list"></i> Data Explorer
-                </button>
-            </nav>
-            <div class="p-4 border-t border-slate-100">
-                <div class="bg-slate-900 rounded-xl p-4 text-white">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Weekly Limit</p>
-                    <p class="text-xl font-bold">32 Hours <span class="text-xs font-normal opacity-60">/ 16 Pts</span></p>
+        </section>
+
+        <!-- 3. CLIENT PROGRESS VIEW -->
+        <section id="view-client" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="clientGrid">
+                <!-- Client Cards via JS -->
+            </div>
+        </section>
+
+        <!-- 4. DELIVERY SCHEDULE VIEW -->
+        <section id="view-delivery" class="tab-content hidden space-y-6">
+            <div class="max-w-4xl mx-auto space-y-4">
+                <h2 class="text-lg font-bold text-slate-800 px-2">Upcoming Deliverables & Milestones</h2>
+                <div id="deliveryTimeline" class="space-y-4">
+                    <!-- Delivery Items via JS -->
                 </div>
             </div>
-        </aside>
+        </section>
 
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto no-scrollbar relative">
-            
-            <!-- Top App Bar -->
-            <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex justify-between items-center">
-                <h2 id="view-title" class="text-xl font-bold text-slate-900">System Overview</h2>
-                <div class="flex items-center gap-4">
-                    <div class="hidden sm:flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-100">
-                        <span class="status-dot bg-emerald-500 animate-pulse"></span> Systems Synced
-                    </div>
-                    <button onclick="refreshData()" class="text-slate-400 hover:text-indigo-600 transition-colors"><i class="fa-solid fa-rotate"></i></button>
-                </div>
-            </header>
+    </main>
 
-            <div class="p-8 max-w-6xl mx-auto">
-                
-                <!-- View: Overview -->
-                <section id="view-overview" class="tab-content block">
-                    <p class="text-slate-500 mb-8 max-w-3xl">
-                        This view monitors the core OGSM goals: Reducing developer overload and ensuring task readiness. Use the filters to drill down into specific customer projects.
-                    </p>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                        <div class="data-card bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Tasks</span>
-                            <div class="text-3xl font-bold text-slate-900 mt-1">42</div>
-                            <div class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full inline-block mt-2">Space A + B</div>
-                        </div>
-                        <div class="data-card bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Task Readiness</span>
-                            <div class="text-3xl font-bold text-emerald-600 mt-1">92.4%</div>
-                            <div class="text-[10px] font-bold text-slate-400 mt-2">Goal: 95%</div>
-                        </div>
-                        <div class="data-card bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Dev Overload</span>
-                            <div class="text-3xl font-bold text-orange-600 mt-1">7.1%</div>
-                            <div class="text-[10px] font-bold text-slate-400 mt-2">Limit: 32h / 16pt</div>
-                        </div>
-                        <div class="data-card bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Avg. Velocity</span>
-                            <div class="text-3xl font-bold text-slate-900 mt-1">28.5</div>
-                            <div class="text-[10px] font-bold text-slate-400 mt-2">Pts / Sprint</div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                            <h3 class="font-bold text-slate-900 mb-6 flex justify-between items-center">
-                                <span>Team Workload Balance</span>
-                                <span class="text-xs font-normal text-slate-400">Target Line: 11 Pts (70%)</span>
-                            </h3>
-                            <div class="chart-container">
-                                <canvas id="workloadChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                            <h3 class="font-bold text-slate-900 mb-6">Platform Mix</h3>
-                            <div class="chart-container" style="height: 200px;">
-                                <canvas id="platformChart"></canvas>
-                            </div>
-                            <div class="mt-8 space-y-3">
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-indigo-600"></span> Mobile</span>
-                                    <span class="font-bold">18 Tasks</span>
-                                </div>
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-200"></span> Web</span>
-                                    <span class="font-bold">24 Tasks</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- View: Team Details -->
-                <section id="view-team" class="tab-content hidden">
-                    <p class="text-slate-500 mb-8">
-                        This view analyzes individual developer capacity. The Cloudflare Worker uses this data to "Slot-In" new tasks to the developer with the highest remaining capacity.
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="team-grid">
-                        <!-- JS populated cards -->
-                    </div>
-                </section>
-
-                <!-- View: Data Explorer -->
-                <section id="view-data" class="tab-content hidden">
-                    <p class="text-slate-500 mb-8">
-                        Identify tasks that are "Unready" (missing Platform or Customer data). Maintaining this data is required for the automation engine to work.
-                    </p>
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400 border-b border-slate-100">
-                                    <th class="px-6 py-4">Task Name</th>
-                                    <th class="px-6 py-4">Space</th>
-                                    <th class="px-6 py-4">Platform</th>
-                                    <th class="px-6 py-4">Status</th>
-                                    <th class="px-6 py-4">Readiness</th>
-                                </tr>
-                            </thead>
-                            <tbody id="task-table-body" class="divide-y divide-slate-100 text-sm">
-                                <!-- JS populated rows -->
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-            </div>
-        </main>
-    </div>
-
-    <!-- Logic Script -->
     <script>
-        // Data State
-        const teamData = [
-            { id: 101, name: "Ali", role: "Mobile Specialist", points: 14, skills: ["Mobile"], avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" },
-            { id: 102, name: "Sarah", role: "Web Specialist", points: 6, skills: ["Web"], avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" },
-            { id: 103, name: "Kevin", role: "Hybrid Developer", points: 10, skills: ["Web", "Mobile"], avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Kevin" },
-            { id: 104, name: "Mei", role: "Frontend Dev", points: 8, skills: ["Web"], avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mei" }
+        // ------------------------------
+        // DATA & STATE
+        // ------------------------------
+        const tasks = [
+            { id: 1, name: 'Fix Payment Gateway', client: 'Alpha Bank', assignee: 'Ali', status: 'Done', sprint: '77', urgency: 'High', due: '2026-01-15', hours: 12, type: 'Task' },
+            { id: 2, name: 'Database Migration', client: 'Alpha Bank', assignee: 'Siti', status: 'In Progress', sprint: '77', urgency: 'Medium', due: '2026-01-18', hours: 20, type: 'Task' },
+            { id: 3, name: 'Security Audit v1', client: 'Alpha Bank', assignee: 'Rashdan', status: 'Open', sprint: '78', urgency: 'High', due: '2026-02-01', hours: 10, type: 'Milestone' },
+            { id: 4, name: 'Retail App UI Kit', client: 'Global Retail', assignee: 'Ali', status: 'Done', sprint: '77', urgency: 'Low', due: '2026-01-10', hours: 8, type: 'Task' },
+            { id: 5, name: 'Inventory Sync API', client: 'Global Retail', assignee: 'Siti', status: 'Open', sprint: '78', urgency: 'Medium', due: '2026-01-20', hours: 15, type: 'Task' },
+            { id: 6, name: 'Final Production Launch', client: 'Global Retail', assignee: 'Rashdan', status: 'Open', sprint: '79', urgency: 'High', due: '2026-03-15', hours: 0, type: 'Milestone' },
+            { id: 7, name: 'User Onboarding Flow', client: 'TechStart Inc', assignee: 'Ali', status: 'In Progress', sprint: '77', urgency: 'Medium', due: '2026-01-25', hours: 14, type: 'Task' }
         ];
 
-        const taskData = [
-            { name: "Mobile API Integration", space: "Space A", platform: "Mobile", status: "Planned", ready: true },
-            { name: "Frontend Cleanup", space: "Space B", platform: "Web", status: "In Progress", ready: true },
-            { name: "Client Onboarding", space: "Space A", platform: null, status: "Planned", ready: false },
-            { name: "Database Patch", space: "Space B", platform: "Backend", status: "Planned", ready: true },
-            { name: "Auth Flow Fix", space: "Space A", platform: "Web", status: "To Do", ready: true }
-        ];
+        const DEV_CAPACITY = 32;
+        let charts = {};
 
-        let workloadChart, platformChart;
-
+        // ------------------------------
+        // CORE LOGIC
+        // ------------------------------
         function switchTab(tabId) {
-            // Update Navigation
-            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-            document.getElementById(`nav-${tabId}`).classList.add('active');
-            
-            // Update Views
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`view-${tabId}`).classList.remove('hidden');
-            
-            // Update Title
-            const titles = { overview: "System Overview", team: "Capacity Analysis", data: "Data Quality Explorer" };
-            document.getElementById('view-title').innerText = titles[tabId];
-
-            if (tabId === 'overview') initCharts();
-            if (tabId === 'team') renderTeam();
-            if (tabId === 'data') renderTasks();
+            document.getElementById(`btn-${tabId}`).classList.add('active');
+            renderView(tabId);
         }
 
-        function initCharts() {
-            if (workloadChart) workloadChart.destroy();
-            if (platformChart) platformChart.destroy();
+        function renderView(view) {
+            if (view === 'mgmt') renderManagement();
+            if (view === 'plan') renderPlanning();
+            if (view === 'client') renderClientProgress();
+            if (view === 'delivery') renderDelivery();
+        }
 
-            // Workload Bar Chart
-            const workloadCtx = document.getElementById('workloadChart').getContext('2d');
-            workloadChart = new Chart(workloadCtx, {
+        // ------------------------------
+        // 1. MANAGEMENT VIEW
+        // ------------------------------
+        function renderManagement() {
+            const clientFilter = document.getElementById('mgmtClientFilter');
+            const statusFilter = document.getElementById('mgmtStatus');
+            const search = document.getElementById('mgmtSearch').value.toLowerCase();
+            
+            // Populate Dropdowns once
+            if (clientFilter.options.length <= 1) {
+                [...new Set(tasks.map(t => t.client))].forEach(c => clientFilter.add(new Option(c, c)));
+                [...new Set(tasks.map(t => t.status))].forEach(s => statusFilter.add(new Option(s, s)));
+            }
+
+            const filtered = tasks.filter(t => 
+                (!clientFilter.value || t.client === clientFilter.value) &&
+                (!statusFilter.value || t.status === statusFilter.value) &&
+                (t.name.toLowerCase().includes(search))
+            );
+
+            // Table
+            const tb = document.getElementById('mgmtTable');
+            tb.innerHTML = filtered.map(t => `
+                <tr class="hover:bg-slate-50">
+                    <td class="px-6 py-4 font-medium text-slate-900">${t.name}</td>
+                    <td class="px-6 py-4 text-slate-500">${t.client}</td>
+                    <td class="px-6 py-4 text-slate-600">${t.assignee}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${t.status === 'Done' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${t.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-xs font-semibold ${t.urgency === 'High' ? 'text-red-500' : 'text-slate-400'}">${t.urgency}</td>
+                </tr>
+            `).join('');
+
+            // Charts
+            updateMgmtCharts(filtered);
+        }
+
+        function updateMgmtCharts(data) {
+            const stats = data.reduce((acc, t) => { acc[t.status] = (acc[t.status] || 0) + 1; return acc; }, {});
+            const devs = data.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + 1; return acc; }, {});
+
+            if(charts.status) charts.status.destroy();
+            charts.status = new Chart(document.getElementById('chartStatus'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: ['#10b981', '#f59e0b', '#6366f1'] }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            if(charts.dev) charts.dev.destroy();
+            charts.dev = new Chart(document.getElementById('chartAssignee'), {
+                type: 'bar',
+                data: { labels: Object.keys(devs), datasets: [{ label: 'Tasks', data: Object.values(devs), backgroundColor: '#7c3aed' }] },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        // ------------------------------
+        // 2. PLANNING VIEW
+        // ------------------------------
+        function renderPlanning() {
+            const devHours = tasks.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + t.hours; return acc; }, {});
+            const labels = Object.keys(devHours);
+            const values = Object.values(devHours);
+
+            if(charts.cap) charts.cap.destroy();
+            charts.cap = new Chart(document.getElementById('chartCapacity'), {
                 type: 'bar',
                 data: {
-                    labels: teamData.map(d => d.name),
-                    datasets: [{
-                        label: 'Current Load (Points)',
-                        data: teamData.map(d => d.points),
-                        backgroundColor: teamData.map(d => d.points > 11 ? '#f97316' : '#4f46e5'),
-                        borderRadius: 8
-                    }]
+                    labels,
+                    datasets: [
+                        { label: 'Used Hours', data: values, backgroundColor: '#7c3aed' },
+                        { label: 'Max Capacity', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#e2e8f0' }
+                    ]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { backgroundColor: '#1e293b', padding: 12 }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, max: 16, grid: { borderDash: [5, 5] } },
-                        x: { grid: { display: false } }
-                    }
-                }
+                options: { maintainAspectRatio: false, indexAxis: 'y' }
             });
 
-            // Platform Donut Chart
-            const platformCtx = document.getElementById('platformChart').getContext('2d');
-            platformChart = new Chart(platformCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Mobile', 'Web'],
-                    datasets: [{
-                        data: [18, 24],
-                        backgroundColor: ['#4f46e5', '#e2e8f0'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: { legend: { display: false } }
-                }
-            });
+            const capList = document.getElementById('capacityList');
+            capList.innerHTML = labels.map(name => {
+                const used = devHours[name];
+                const perc = Math.min((used / DEV_CAPACITY) * 100, 100);
+                const color = used > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600';
+                return `
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-semibold"><span>${name}</span><span>${used} / ${DEV_CAPACITY}h</span></div>
+                        <div class="progress-bar"><div class="progress-fill ${color}" style="width: ${perc}%"></div></div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        function renderTeam() {
-            const grid = document.getElementById('team-grid');
-            grid.innerHTML = teamData.map(dev => {
-                const perc = (dev.points / 16) * 100;
-                const status = dev.points > 11 ? 'Overloaded' : (dev.points > 8 ? 'Near Limit' : 'Stable');
-                const statusColor = dev.points > 11 ? 'text-orange-600 bg-orange-50' : (dev.points > 8 ? 'text-amber-600 bg-amber-50' : 'text-emerald-600 bg-emerald-50');
-
+        // ------------------------------
+        // 3. CLIENT PROGRESS VIEW
+        // ------------------------------
+        function renderClientProgress() {
+            const clients = [...new Set(tasks.map(t => t.client))];
+            const grid = document.getElementById('clientGrid');
+            
+            grid.innerHTML = clients.map(client => {
+                const clientTasks = tasks.filter(t => t.client === client);
+                const doneTasks = clientTasks.filter(t => t.status === 'Done').length;
+                const progress = Math.round((doneTasks / clientTasks.length) * 100);
+                
                 return `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <div class="flex items-center gap-4 mb-6">
-                            <img src="${dev.avatar}" class="w-12 h-12 rounded-full bg-slate-100">
+                    <div class="glass-card p-6 space-y-4">
+                        <div class="flex justify-between items-start">
                             <div>
-                                <h4 class="font-bold text-slate-900">${dev.name}</h4>
-                                <p class="text-xs text-slate-400 font-medium">${dev.role}</p>
+                                <h4 class="font-bold text-slate-900">${client}</h4>
+                                <p class="text-xs text-slate-500">${clientTasks.length} Active Tasks</p>
                             </div>
+                            <span class="text-lg font-bold text-purple-600">${progress}%</span>
                         </div>
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-end">
-                                <span class="text-xs font-bold text-slate-400 uppercase">Weekly Load</span>
-                                <span class="text-sm font-bold text-slate-900">${dev.points * 2}h <span class="text-slate-300">/ 32h</span></span>
-                            </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                                <div class="h-full ${dev.points > 11 ? 'bg-orange-500' : 'bg-indigo-600'}" style="width: ${perc}%"></div>
-                            </div>
-                            <div class="flex justify-between items-center pt-2">
-                                <span class="text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wider ${statusColor}">${status}</span>
-                                <span class="text-[10px] text-slate-400 font-bold uppercase">${dev.skills.join(' / ')}</span>
-                            </div>
+                        <div class="progress-bar"><div class="progress-fill bg-emerald-500" style="width: ${progress}%"></div></div>
+                        <div class="pt-2">
+                             <p class="text-[10px] text-slate-400 uppercase font-bold mb-2">Assignees</p>
+                             <div class="flex -space-x-2">
+                                ${[...new Set(clientTasks.map(t => t.assignee))].map(a => `<div title="${a}" class="w-8 h-8 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">${a[0]}</div>`).join('')}
+                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function renderTasks() {
-            const tbody = document.getElementById('task-table-body');
-            tbody.innerHTML = taskData.map(task => `
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="px-6 py-4 font-semibold text-slate-900">${task.name}</td>
-                    <td class="px-6 py-4 text-slate-500">${task.space}</td>
-                    <td class="px-6 py-4">
-                        ${task.platform ? `<span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase">${task.platform}</span>` : `<span class="text-red-500 italic text-xs font-medium"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Missing</span>`}
-                    </td>
-                    <td class="px-6 py-4 text-slate-500 font-medium text-xs">${task.status}</td>
-                    <td class="px-6 py-4">
-                        ${task.ready ? `<i class="fa-solid fa-circle-check text-emerald-500"></i>` : `<i class="fa-solid fa-circle-xmark text-slate-300"></i>`}
-                    </td>
-                </tr>
-            `).join('');
+        // ------------------------------
+        // 4. DELIVERY SCHEDULE
+        // ------------------------------
+        function renderDelivery() {
+            const milestones = tasks
+                .filter(t => t.type === 'Milestone' || t.urgency === 'High')
+                .sort((a, b) => new Date(a.due) - new Date(b.due));
+
+            const container = document.getElementById('deliveryTimeline');
+            const today = new Date();
+
+            container.innerHTML = milestones.map(m => {
+                const dueDate = new Date(m.due);
+                const diffTime = dueDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const isLate = diffDays < 0;
+
+                return `
+                    <div class="glass-card p-5 flex items-center gap-6 relative overflow-hidden">
+                        ${isLate ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>' : '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>'}
+                        <div class="flex-shrink-0 text-center w-16">
+                            <div class="text-xs font-bold text-slate-400 uppercase">${dueDate.toLocaleString('default', { month: 'short' })}</div>
+                            <div class="text-2xl font-black text-slate-800">${dueDate.getDate()}</div>
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold text-slate-900">${m.name}</h4>
+                                ${m.type === 'Milestone' ? '<span class="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-tight">Milestone</span>' : ''}
+                            </div>
+                            <p class="text-sm text-slate-500">${m.client} • Delivery Target</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-bold ${isLate ? 'text-red-500' : 'text-slate-700'}">${isLate ? 'OVERDUE' : diffDays + ' days left'}</div>
+                            <div class="text-[11px] text-slate-400">${m.status}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        function refreshData() {
-            // Simulated Refresh
-            const btn = document.querySelector('button[onclick="refreshData()"]');
-            btn.classList.add('animate-spin');
-            setTimeout(() => {
-                btn.classList.remove('animate-spin');
-                initCharts();
-                renderTeam();
-                renderTasks();
-            }, 1000);
-        }
+        // Search listener
+        document.getElementById('mgmtSearch').addEventListener('input', renderManagement);
+        document.getElementById('mgmtClientFilter').addEventListener('change', renderManagement);
+        document.getElementById('mgmtStatus').addEventListener('change', renderManagement);
 
-        // Initialize App
-        window.onload = () => {
-            initCharts();
-        };
+        window.onload = () => switchTab('mgmt');
     </script>
 </body>
 </html>
