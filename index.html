@@ -18,7 +18,6 @@
 </head>
 <body class="text-slate-800 antialiased">
 
-    <!-- Header & Navigation -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
@@ -26,101 +25,93 @@
                     <div class="w-9 h-9 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-200">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
                     </div>
-                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Project Master Console</h1>
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Live Console</h1>
+                        <p id="syncStatus" class="text-[10px] text-slate-400 font-medium uppercase tracking-widest italic">Syncing...</p>
+                    </div>
                 </div>
                 <nav class="flex gap-8">
                     <button onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active">Management</button>
                     <button onclick="switchTab('plan')" id="btn-plan" class="tab-btn">Planning</button>
                     <button onclick="switchTab('client')" id="btn-client" class="tab-btn">Client Progress</button>
-                    <button onclick="switchTab('delivery')" id="btn-delivery" class="tab-btn">Delivery Schedule</button>
+                    <button onclick="switchTab('delivery')" id="btn-delivery" class="tab-btn">Delivery</button>
                 </nav>
+                <button onclick="fetchRealData()" class="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg hover:bg-slate-800 flex items-center gap-2">Sync</button>
             </div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div id="loadingOverlay" class="fixed inset-0 bg-white/60 backdrop-blur-sm z-[60] flex items-center justify-center hidden">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        </div>
 
-        <!-- 1. MANAGEMENT VIEW -->
         <section id="view-mgmt" class="tab-content space-y-6">
-            <div class="glass-card p-4 flex flex-wrap gap-4 items-center">
-                <input type="text" id="mgmtSearch" placeholder="Search tasks..." class="flex-1 min-w-[200px] px-4 py-2 border rounded-lg text-sm bg-slate-50">
-                <select id="mgmtClientFilter" class="px-4 py-2 border rounded-lg text-sm bg-white"><option value="">All Clients</option></select>
-                <select id="mgmtStatus" class="px-4 py-2 border rounded-lg text-sm bg-white"><option value="">All Statuses</option></select>
+            <div class="glass-card p-4 flex gap-4">
+                <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Search..." class="flex-1 px-4 py-2 border rounded-lg text-sm bg-slate-50 outline-none">
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-card p-6"><h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Status Distribution</h3><div class="h-64"><canvas id="chartStatus"></canvas></div></div>
-                <div class="glass-card p-6"><h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Workload by Dev</h3><div class="h-64"><canvas id="chartAssignee"></canvas></div></div>
+                <div class="glass-card p-6 h-80"><canvas id="chartStatus"></canvas></div>
+                <div class="glass-card p-6 h-80"><canvas id="chartAssignee"></canvas></div>
             </div>
             <div class="glass-card overflow-hidden">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 border-b">
-                        <tr>
-                            <th class="px-6 py-4 font-semibold">Task</th>
-                            <th class="px-6 py-4 font-semibold">Client</th>
-                            <th class="px-6 py-4 font-semibold">Assignee</th>
-                            <th class="px-6 py-4 font-semibold">Status</th>
-                            <th class="px-6 py-4 font-semibold">Urgency</th>
-                        </tr>
+                        <tr><th class="px-6 py-4">Task</th><th class="px-6 py-4">Client</th><th class="px-6 py-4">Status</th><th class="px-6 py-4">Due</th></tr>
                     </thead>
                     <tbody id="mgmtTable" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </section>
 
-        <!-- 2. PLANNING VIEW -->
         <section id="view-plan" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 glass-card p-6">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Resource Allocation (Hours)</h3>
-                    <div class="h-80"><canvas id="chartCapacity"></canvas></div>
-                </div>
-                <div class="glass-card p-6 space-y-4">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase">Capacity Summary</h3>
-                    <div id="capacityList" class="space-y-4"></div>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2 glass-card p-6 h-96"><canvas id="chartCapacity"></canvas></div>
+                <div class="glass-card p-6 space-y-4" id="capacityList"></div>
             </div>
         </section>
 
-        <!-- 3. CLIENT PROGRESS VIEW -->
-        <section id="view-client" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="clientGrid">
-                <!-- Client Cards via JS -->
-            </div>
-        </section>
-
-        <!-- 4. DELIVERY SCHEDULE VIEW -->
-        <section id="view-delivery" class="tab-content hidden space-y-6">
-            <div class="max-w-4xl mx-auto space-y-4">
-                <h2 class="text-lg font-bold text-slate-800 px-2">Upcoming Deliverables & Milestones</h2>
-                <div id="deliveryTimeline" class="space-y-4">
-                    <!-- Delivery Items via JS -->
-                </div>
-            </div>
-        </section>
-
+        <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-6" id="clientGrid"></section>
+        <section id="view-delivery" class="tab-content hidden max-w-2xl mx-auto space-y-4" id="deliveryTimeline"></section>
     </main>
 
     <script>
-        // ------------------------------
-        // DATA & STATE
-        // ------------------------------
-        const tasks = [
-            { id: 1, name: 'Fix Payment Gateway', client: 'Alpha Bank', assignee: 'Ali', status: 'Done', sprint: '77', urgency: 'High', due: '2026-01-15', hours: 12, type: 'Task' },
-            { id: 2, name: 'Database Migration', client: 'Alpha Bank', assignee: 'Siti', status: 'In Progress', sprint: '77', urgency: 'Medium', due: '2026-01-18', hours: 20, type: 'Task' },
-            { id: 3, name: 'Security Audit v1', client: 'Alpha Bank', assignee: 'Rashdan', status: 'Open', sprint: '78', urgency: 'High', due: '2026-02-01', hours: 10, type: 'Milestone' },
-            { id: 4, name: 'Retail App UI Kit', client: 'Global Retail', assignee: 'Ali', status: 'Done', sprint: '77', urgency: 'Low', due: '2026-01-10', hours: 8, type: 'Task' },
-            { id: 5, name: 'Inventory Sync API', client: 'Global Retail', assignee: 'Siti', status: 'Open', sprint: '78', urgency: 'Medium', due: '2026-01-20', hours: 15, type: 'Task' },
-            { id: 6, name: 'Final Production Launch', client: 'Global Retail', assignee: 'Rashdan', status: 'Open', sprint: '79', urgency: 'High', due: '2026-03-15', hours: 0, type: 'Milestone' },
-            { id: 7, name: 'User Onboarding Flow', client: 'TechStart Inc', assignee: 'Ali', status: 'In Progress', sprint: '77', urgency: 'Medium', due: '2026-01-25', hours: 14, type: 'Task' }
-        ];
-
+        const WORKER_URL = "https://dashboard.fatin-rasyidah.workers.dev/";
         const DEV_CAPACITY = 32;
+        let tasks = [];
         let charts = {};
+        let currentTab = 'mgmt';
 
-        // ------------------------------
-        // CORE LOGIC
-        // ------------------------------
+        async function fetchRealData() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            try {
+                const response = await fetch(WORKER_URL);
+                const data = await response.json();
+                
+                tasks = data.tasks.map(t => {
+                    const clientField = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
+                    const hourField = t.custom_fields?.find(f => f.name.toLowerCase().includes('hour'));
+                    return {
+                        name: t.name,
+                        client: clientField?.value || "Internal",
+                        assignee: t.assignees?.[0]?.username || "Unassigned",
+                        status: t.status.status,
+                        due: t.due_date ? new Date(parseInt(t.due_date)).toLocaleDateString() : "No Date",
+                        hours: parseFloat(hourField?.value) || 0,
+                        type: t.name.toLowerCase().includes('milestone') ? 'Milestone' : 'Task'
+                    };
+                });
+                document.getElementById('syncStatus').innerText = "Last Sync: " + new Date().toLocaleTimeString();
+                renderView(currentTab);
+            } catch (err) {
+                document.getElementById('syncStatus').innerText = "Sync Failed";
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+
         function switchTab(tabId) {
+            currentTab = tabId;
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`view-${tabId}`).classList.remove('hidden');
@@ -129,183 +120,62 @@
         }
 
         function renderView(view) {
-            if (view === 'mgmt') renderManagement();
-            if (view === 'plan') renderPlanning();
-            if (view === 'client') renderClientProgress();
-            if (view === 'delivery') renderDelivery();
-        }
-
-        // ------------------------------
-        // 1. MANAGEMENT VIEW
-        // ------------------------------
-        function renderManagement() {
-            const clientFilter = document.getElementById('mgmtClientFilter');
-            const statusFilter = document.getElementById('mgmtStatus');
-            const search = document.getElementById('mgmtSearch').value.toLowerCase();
-            
-            // Populate Dropdowns once
-            if (clientFilter.options.length <= 1) {
-                [...new Set(tasks.map(t => t.client))].forEach(c => clientFilter.add(new Option(c, c)));
-                [...new Set(tasks.map(t => t.status))].forEach(s => statusFilter.add(new Option(s, s)));
+            if (view === 'mgmt') {
+                const search = document.getElementById('mgmtSearch').value.toLowerCase();
+                const filtered = tasks.filter(t => t.name.toLowerCase().includes(search));
+                document.getElementById('mgmtTable').innerHTML = filtered.map(t => `
+                    <tr><td class="px-6 py-4 font-medium">${t.name}</td><td class="px-6 py-4 text-slate-500">${t.client}</td><td class="px-6 py-4 text-xs font-bold">${t.status}</td><td class="px-6 py-4 text-slate-400">${t.due}</td></tr>
+                `).join('');
+                updateCharts(filtered);
+            } else if (view === 'plan') {
+                renderPlanning();
+            } else if (view === 'client') {
+                renderClientProgress();
+            } else if (view === 'delivery') {
+                renderDelivery();
             }
-
-            const filtered = tasks.filter(t => 
-                (!clientFilter.value || t.client === clientFilter.value) &&
-                (!statusFilter.value || t.status === statusFilter.value) &&
-                (t.name.toLowerCase().includes(search))
-            );
-
-            // Table
-            const tb = document.getElementById('mgmtTable');
-            tb.innerHTML = filtered.map(t => `
-                <tr class="hover:bg-slate-50">
-                    <td class="px-6 py-4 font-medium text-slate-900">${t.name}</td>
-                    <td class="px-6 py-4 text-slate-500">${t.client}</td>
-                    <td class="px-6 py-4 text-slate-600">${t.assignee}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${t.status === 'Done' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${t.status}</span>
-                    </td>
-                    <td class="px-6 py-4 text-xs font-semibold ${t.urgency === 'High' ? 'text-red-500' : 'text-slate-400'}">${t.urgency}</td>
-                </tr>
-            `).join('');
-
-            // Charts
-            updateMgmtCharts(filtered);
         }
 
-        function updateMgmtCharts(data) {
-            const stats = data.reduce((acc, t) => { acc[t.status] = (acc[t.status] || 0) + 1; return acc; }, {});
-            const devs = data.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + 1; return acc; }, {});
-
+        function updateCharts(data) {
+            const stats = data.reduce((a, t) => { a[t.status] = (a[t.status]||0)+1; return a; }, {});
+            const devs = data.reduce((a, t) => { a[t.assignee] = (a[t.assignee]||0)+1; return a; }, {});
             if(charts.status) charts.status.destroy();
-            charts.status = new Chart(document.getElementById('chartStatus'), {
-                type: 'doughnut',
-                data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: ['#10b981', '#f59e0b', '#6366f1'] }] },
-                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-
+            charts.status = new Chart(document.getElementById('chartStatus'), { type: 'doughnut', data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: ['#10b981','#f59e0b','#6366f1','#ef4444','#94a3b8'] }] }, options: { maintainAspectRatio: false, plugins: { title: { display: true, text: 'Status Distribution' }}} });
             if(charts.dev) charts.dev.destroy();
-            charts.dev = new Chart(document.getElementById('chartAssignee'), {
-                type: 'bar',
-                data: { labels: Object.keys(devs), datasets: [{ label: 'Tasks', data: Object.values(devs), backgroundColor: '#7c3aed' }] },
-                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
+            charts.dev = new Chart(document.getElementById('chartAssignee'), { type: 'bar', data: { labels: Object.keys(devs), datasets: [{ label: 'Tasks', data: Object.values(devs), backgroundColor: '#7c3aed' }] }, options: { maintainAspectRatio: false, plugins: { title: { display: true, text: 'Tasks per Developer' }}} });
         }
 
-        // ------------------------------
-        // 2. PLANNING VIEW
-        // ------------------------------
         function renderPlanning() {
             const devHours = tasks.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + t.hours; return acc; }, {});
             const labels = Object.keys(devHours);
             const values = Object.values(devHours);
-
             if(charts.cap) charts.cap.destroy();
-            charts.cap = new Chart(document.getElementById('chartCapacity'), {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [
-                        { label: 'Used Hours', data: values, backgroundColor: '#7c3aed' },
-                        { label: 'Max Capacity', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#e2e8f0' }
-                    ]
-                },
-                options: { maintainAspectRatio: false, indexAxis: 'y' }
-            });
-
-            const capList = document.getElementById('capacityList');
-            capList.innerHTML = labels.map(name => {
+            charts.cap = new Chart(document.getElementById('chartCapacity'), { type: 'bar', data: { labels, datasets: [{ label: 'Used Hours', data: values, backgroundColor: '#7c3aed' }, { label: 'Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9' }] }, options: { maintainAspectRatio: false, indexAxis: 'y' } });
+            document.getElementById('capacityList').innerHTML = labels.map(name => {
                 const used = devHours[name];
                 const perc = Math.min((used / DEV_CAPACITY) * 100, 100);
-                const color = used > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600';
-                return `
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-xs font-semibold"><span>${name}</span><span>${used} / ${DEV_CAPACITY}h</span></div>
-                        <div class="progress-bar"><div class="progress-fill ${color}" style="width: ${perc}%"></div></div>
-                    </div>
-                `;
+                return `<div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>${name}</span><span>${used}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${used > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${perc}%"></div></div></div>`;
             }).join('');
         }
 
-        // ------------------------------
-        // 3. CLIENT PROGRESS VIEW
-        // ------------------------------
         function renderClientProgress() {
             const clients = [...new Set(tasks.map(t => t.client))];
-            const grid = document.getElementById('clientGrid');
-            
-            grid.innerHTML = clients.map(client => {
-                const clientTasks = tasks.filter(t => t.client === client);
-                const doneTasks = clientTasks.filter(t => t.status === 'Done').length;
-                const progress = Math.round((doneTasks / clientTasks.length) * 100);
-                
-                return `
-                    <div class="glass-card p-6 space-y-4">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-bold text-slate-900">${client}</h4>
-                                <p class="text-xs text-slate-500">${clientTasks.length} Active Tasks</p>
-                            </div>
-                            <span class="text-lg font-bold text-purple-600">${progress}%</span>
-                        </div>
-                        <div class="progress-bar"><div class="progress-fill bg-emerald-500" style="width: ${progress}%"></div></div>
-                        <div class="pt-2">
-                             <p class="text-[10px] text-slate-400 uppercase font-bold mb-2">Assignees</p>
-                             <div class="flex -space-x-2">
-                                ${[...new Set(clientTasks.map(t => t.assignee))].map(a => `<div title="${a}" class="w-8 h-8 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-600">${a[0]}</div>`).join('')}
-                             </div>
-                        </div>
-                    </div>
-                `;
+            document.getElementById('view-client').innerHTML = clients.map(client => {
+                const cTasks = tasks.filter(t => t.client === client);
+                const done = cTasks.filter(t => t.status.toLowerCase().includes('done')).length;
+                const progress = Math.round((done / cTasks.length) * 100) || 0;
+                return `<div class="glass-card p-6 space-y-4"><div><h4 class="font-bold text-slate-900">${client}</h4><p class="text-xs text-slate-400">${cTasks.length} Tasks</p></div><div class="text-xl font-black text-purple-600">${progress}%</div><div class="progress-bar"><div class="progress-fill bg-emerald-500" style="width: ${progress}%"></div></div></div>`;
             }).join('');
         }
 
-        // ------------------------------
-        // 4. DELIVERY SCHEDULE
-        // ------------------------------
         function renderDelivery() {
-            const milestones = tasks
-                .filter(t => t.type === 'Milestone' || t.urgency === 'High')
-                .sort((a, b) => new Date(a.due) - new Date(b.due));
-
-            const container = document.getElementById('deliveryTimeline');
-            const today = new Date();
-
-            container.innerHTML = milestones.map(m => {
-                const dueDate = new Date(m.due);
-                const diffTime = dueDate - today;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                const isLate = diffDays < 0;
-
-                return `
-                    <div class="glass-card p-5 flex items-center gap-6 relative overflow-hidden">
-                        ${isLate ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>' : '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>'}
-                        <div class="flex-shrink-0 text-center w-16">
-                            <div class="text-xs font-bold text-slate-400 uppercase">${dueDate.toLocaleString('default', { month: 'short' })}</div>
-                            <div class="text-2xl font-black text-slate-800">${dueDate.getDate()}</div>
-                        </div>
-                        <div class="flex-grow">
-                            <div class="flex items-center gap-2">
-                                <h4 class="font-bold text-slate-900">${m.name}</h4>
-                                ${m.type === 'Milestone' ? '<span class="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-tight">Milestone</span>' : ''}
-                            </div>
-                            <p class="text-sm text-slate-500">${m.client} • Delivery Target</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-bold ${isLate ? 'text-red-500' : 'text-slate-700'}">${isLate ? 'OVERDUE' : diffDays + ' days left'}</div>
-                            <div class="text-[11px] text-slate-400">${m.status}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            const milestones = tasks.filter(t => t.type === 'Milestone').sort((a,b) => new Date(a.due) - new Date(b.due));
+            document.getElementById('deliveryTimeline').innerHTML = milestones.length ? milestones.map(m => `
+                <div class="glass-card p-4 flex justify-between items-center"><div><div class="font-bold">${m.name}</div><div class="text-xs text-slate-500">${m.client}</div></div><div class="text-right text-xs font-bold">${m.due}</div></div>
+            `).join('') : '<p class="text-center text-slate-400 py-10">No upcoming milestones</p>';
         }
 
-        // Search listener
-        document.getElementById('mgmtSearch').addEventListener('input', renderManagement);
-        document.getElementById('mgmtClientFilter').addEventListener('change', renderManagement);
-        document.getElementById('mgmtStatus').addEventListener('change', renderManagement);
-
-        window.onload = () => switchTab('mgmt');
+        window.onload = fetchRealData;
     </script>
 </body>
 </html>
