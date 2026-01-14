@@ -15,7 +15,7 @@
         .progress-bar { height: 8px; border-radius: 4px; background: #f1f5f9; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* Multi-select Dropdowns */
+        /* Multi-select Dropdowns - Improved for stability */
         .filter-dropdown { position: relative; display: inline-block; }
         .filter-content { 
             display: none; 
@@ -31,7 +31,8 @@
             padding: 12px;
             margin-top: 4px;
         }
-        .filter-dropdown:hover .filter-content { display: block; }
+        .filter-content.show { display: block; }
+        
         .filter-item { display: flex; align-items: center; padding: 8px 10px; font-size: 0.8125rem; cursor: pointer; border-radius: 0.375rem; transition: background 0.2s; user-select: none; }
         .filter-item:hover { background-color: #f8fafc; }
         .filter-item input { margin-right: 10px; accent-color: #7c3aed; cursor: pointer; width: 14px; height: 14px; pointer-events: none; }
@@ -39,7 +40,7 @@
         input { outline: none !important; border-radius: 0.5rem; border: 1px solid #e2e8f0; }
         input:focus { border-color: #7c3aed; ring: 2px; ring-color: #ddd6fe; }
 
-        /* Status Badge Colors */
+        /* Status Badge Colors based on your specific workflow */
         .status-todo { background: #f1f5f9; color: #64748b; }
         .status-inprogress { background: #dbeafe; color: #2563eb; }
         .status-test, .status-trial { background: #f3e8ff; color: #9333ea; }
@@ -59,8 +60,8 @@
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold tracking-tight text-slate-900">Sprint Console</h1>
-                        <p id="syncStatus" class="text-[10px] text-slate-400 font-medium uppercase tracking-widest italic">Ready</p>
+                        <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Sprint Console</h1>
+                        <p id="syncStatus" class="text-[10px] text-slate-400 font-medium uppercase tracking-widest italic tracking-wider">Awaiting Sync...</p>
                     </div>
                 </div>
                 <nav class="flex gap-8">
@@ -68,9 +69,7 @@
                     <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn">Planning</div>
                     <div onclick="switchTab('client')" id="btn-client" class="tab-btn">Client Progress</div>
                 </nav>
-                <button onclick="fetchRealData()" class="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors flex items-center gap-2">
-                    Sync Now
-                </button>
+                <button onclick="fetchRealData()" class="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors flex items-center gap-2">Sync Now</button>
             </div>
         </div>
     </header>
@@ -93,27 +92,27 @@
                 
                 <!-- Multi-select Client -->
                 <div class="filter-dropdown">
-                    <button class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[160px] text-left flex justify-between items-center">
+                    <button onclick="toggleDropdown(event, 'filterClientContainer')" class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[160px] text-left flex justify-between items-center dropdown-trigger">
                         <span id="labelClient">All Clients</span>
-                        <svg class="w-3 h-3 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        <svg class="w-3 h-3 ml-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                     </button>
                     <div id="filterClientContainer" class="filter-content"></div>
                 </div>
 
                 <!-- Multi-select Assignee -->
                 <div class="filter-dropdown">
-                    <button class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[160px] text-left flex justify-between items-center">
+                    <button onclick="toggleDropdown(event, 'filterAssigneeContainer')" class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[160px] text-left flex justify-between items-center dropdown-trigger">
                         <span id="labelAssignee">All Assignees</span>
-                        <svg class="w-3 h-3 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        <svg class="w-3 h-3 ml-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                     </button>
                     <div id="filterAssigneeContainer" class="filter-content"></div>
                 </div>
 
                 <!-- Multi-select Status -->
                 <div class="filter-dropdown">
-                    <button class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[160px] text-left flex justify-between items-center">
+                    <button onclick="toggleDropdown(event, 'filterStatusContainer')" class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[160px] text-left flex justify-between items-center dropdown-trigger">
                         <span id="labelStatus">All Statuses</span>
-                        <svg class="w-3 h-3 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        <svg class="w-3 h-3 ml-2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                     </button>
                     <div id="filterStatusContainer" class="filter-content"></div>
                 </div>
@@ -129,7 +128,7 @@
             <div class="glass-card overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
                     <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Sprint Task List</h3>
-                    <span id="taskCounter" class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">0</span>
+                    <span id="taskCounter" class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full uppercase">0 Tasks</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -183,6 +182,27 @@
             statuses: []
         };
 
+        // --- FIXED DROPDOWN BEHAVIOR ---
+        function toggleDropdown(event, containerId) {
+            event.stopPropagation();
+            const container = document.getElementById(containerId);
+            const isShowing = container.classList.contains('show');
+            
+            // Close all others first
+            document.querySelectorAll('.filter-content').forEach(el => el.classList.remove('show'));
+            
+            if (!isShowing) {
+                container.classList.add('show');
+            }
+        }
+
+        // Close dropdowns when clicking outside
+        window.onclick = function(event) {
+            if (!event.target.closest('.filter-dropdown')) {
+                document.querySelectorAll('.filter-content').forEach(el => el.classList.remove('show'));
+            }
+        };
+
         async function fetchRealData() {
             document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
@@ -191,7 +211,7 @@
                 const data = await response.json();
 
                 tasks = data.tasks.map(t => {
-                    // RESOLVE CLIENT NAME
+                    // RESOLVE CLIENT NAME (Handle ID mapping)
                     const clientField = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
                     let clientName = "Internal";
                     if (clientField && clientField.value !== undefined) {
@@ -214,8 +234,10 @@
                         hours = parseFloat(hf?.value) || 0;
                     }
 
-                    // RESOLVE STATUS TYPE (deployed and closed are done)
-                    const statusName = (t.status?.status || "todo").toLowerCase().trim();
+                    // RESOLVE STATUS (Progress Logic)
+                    const statusRaw = t.status?.status || "Todo";
+                    const statusName = statusRaw.toLowerCase().trim();
+                    // "deployed" and "closed" are the only completion triggers
                     const isDone = (statusName === 'deployed' || statusName === 'closed');
 
                     return {
@@ -224,14 +246,14 @@
                         listName: t.list?.name || "Global",
                         client: clientName,
                         assignee: t.assignees?.[0]?.username || "Unassigned",
-                        status: t.status?.status || "Todo",
+                        status: statusRaw,
                         statusKey: statusName.replace(/\s/g, ''),
                         isClosed: isDone,
                         hours: hours
                     };
                 });
 
-                document.getElementById('syncStatus').innerText = `Sync: ${new Date().toLocaleTimeString()} (${tasks.length} items)`;
+                document.getElementById('syncStatus').innerText = `Synced: ${new Date().toLocaleTimeString()} (${tasks.length} items)`;
                 populateMultiSelects();
                 renderView(currentTab);
             } catch (err) {
@@ -263,7 +285,7 @@
         }
 
         function toggleMultiFilter(event, key, value, labelId, title) {
-            // Updated to handle logic without preventDefault to allow ticking
+            event.stopPropagation(); // VERY IMPORTANT: Stops dropdown from closing when ticking boxes
             const idx = activeFilters[key].indexOf(value);
             if (idx === -1) activeFilters[key].push(value);
             else activeFilters[key].splice(idx, 1);
@@ -273,7 +295,7 @@
             else if (activeFilters[key].length === 1) label.innerText = activeFilters[key][0];
             else label.innerText = `${activeFilters[key].length} Selected`;
 
-            // Sync visual checkbox state
+            // Update checkbox UI immediately
             const target = event.currentTarget;
             const cb = target.querySelector('input');
             cb.checked = activeFilters[key].includes(value);
@@ -325,7 +347,7 @@
                             <td class="px-6 py-4 text-slate-500">${t.assignee}</td>
                         </tr>
                     `;
-                }).join('') || '<tr><td colspan="5" class="p-10 text-center text-slate-400">No tasks match selected filters.</td></tr>';
+                }).join('') || '<tr><td colspan="5" class="p-10 text-center text-slate-400">No tasks found for current filters.</td></tr>';
                 updateMgmtCharts(filtered);
             } else if (view === 'plan') {
                 renderPlanning(filtered);
@@ -385,15 +407,17 @@
             const clients = [...new Set(data.map(t => t.client))];
             document.getElementById('view-client').innerHTML = clients.map(client => {
                 const cTasks = data.filter(t => t.client === client);
+                // SUCCESS logic: treat "deployed" and "closed" as 100% done
                 const doneCount = cTasks.filter(t => t.isClosed).length;
                 const progress = cTasks.length > 0 ? Math.round((doneCount / cTasks.length) * 100) : 0;
+                
                 return `
                     <div class="glass-card p-6 space-y-4">
-                        <div class="flex justify-between">
+                        <div class="flex justify-between items-center">
                             <h4 class="font-bold text-slate-900">${client}</h4>
-                            <span class="text-xl font-black text-purple-600">${progress}%</span>
+                            <span class="text-xl font-black ${progress === 100 ? 'text-emerald-600' : 'text-purple-600'}">${progress}%</span>
                         </div>
-                        <div class="progress-bar"><div class="progress-fill bg-emerald-500" style="width: ${progress}%"></div></div>
+                        <div class="progress-bar"><div class="progress-fill ${progress === 100 ? 'bg-emerald-500' : 'bg-purple-600'}" style="width: ${progress}%"></div></div>
                         <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
                             <span>Total: ${cTasks.length}</span>
                             <span>Done: ${doneCount}</span>
