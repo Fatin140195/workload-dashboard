@@ -14,6 +14,8 @@
         .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
         .progress-bar { height: 8px; border-radius: 4px; background: #f1f5f9; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.5s ease-out; }
+        select, input { outline: none !important; border-radius: 0.5rem; }
+        select:focus, input:focus { border-color: #7c3aed; ring: 2px; ring-color: #ddd6fe; }
     </style>
 </head>
 <body class="text-slate-800 antialiased">
@@ -27,52 +29,113 @@
                     </div>
                     <div>
                         <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-tight">Live Console</h1>
-                        <p id="syncStatus" class="text-[10px] text-slate-400 font-medium uppercase tracking-widest italic">Syncing...</p>
+                        <p id="syncStatus" class="text-[10px] text-slate-400 font-medium uppercase tracking-widest italic">Waiting for sync...</p>
                     </div>
                 </div>
                 <nav class="flex gap-8">
                     <button onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active">Management</button>
                     <button onclick="switchTab('plan')" id="btn-plan" class="tab-btn">Planning</button>
                     <button onclick="switchTab('client')" id="btn-client" class="tab-btn">Client Progress</button>
-                    <button onclick="switchTab('delivery')" id="btn-delivery" class="tab-btn">Delivery</button>
+                    <button onclick="switchTab('delivery')" id="btn-delivery" class="tab-btn">Delivery Schedule</button>
                 </nav>
-                <button onclick="fetchRealData()" class="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg hover:bg-slate-800 flex items-center gap-2">Sync</button>
+                <button onclick="fetchRealData()" class="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg hover:bg-slate-800 transition-colors flex items-center gap-2">
+                    <svg id="syncIcon" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    Sync Now
+                </button>
             </div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div id="loadingOverlay" class="fixed inset-0 bg-white/60 backdrop-blur-sm z-[60] flex items-center justify-center hidden">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="fixed inset-0 bg-white/50 backdrop-blur-sm z-[60] flex items-center justify-center">
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-xs font-bold text-slate-500 uppercase">Fetching ClickUp Data...</p>
+            </div>
         </div>
 
+        <!-- MANAGEMENT VIEW -->
         <section id="view-mgmt" class="tab-content space-y-6">
-            <div class="glass-card p-4 flex gap-4">
-                <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Search..." class="flex-1 px-4 py-2 border rounded-lg text-sm bg-slate-50 outline-none">
+            <div class="glass-card p-4 flex flex-wrap gap-4 items-center bg-slate-50/50">
+                <div class="flex-1 min-w-[200px] relative">
+                    <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Search tasks..." class="w-full px-4 py-2 pl-10 border rounded-lg text-sm bg-white shadow-sm transition-all focus:border-purple-500">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <select id="mgmtClientFilter" onchange="renderView('mgmt')" class="px-4 py-2 border rounded-lg text-sm bg-white shadow-sm min-w-[140px]"><option value="">All Clients</option></select>
+                <select id="mgmtAssigneeFilter" onchange="renderView('mgmt')" class="px-4 py-2 border rounded-lg text-sm bg-white shadow-sm min-w-[140px]"><option value="">All Assignees</option></select>
+                <select id="mgmtStatus" onchange="renderView('mgmt')" class="px-4 py-2 border rounded-lg text-sm bg-white shadow-sm min-w-[140px]"><option value="">All Statuses</option></select>
+                <button onclick="resetFilters()" class="text-xs font-bold text-slate-400 hover:text-purple-600 uppercase tracking-tight transition-colors">Reset</button>
             </div>
+            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-card p-6 h-80"><canvas id="chartStatus"></canvas></div>
-                <div class="glass-card p-6 h-80"><canvas id="chartAssignee"></canvas></div>
+                <div class="glass-card p-6">
+                    <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-4">Task Status Distribution</h3>
+                    <div class="h-64"><canvas id="chartStatus"></canvas></div>
+                </div>
+                <div class="glass-card p-6">
+                    <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-4">Workload by Assignee</h3>
+                    <div class="h-64"><canvas id="chartAssignee"></canvas></div>
+                </div>
             </div>
+            
             <div class="glass-card overflow-hidden">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 border-b">
-                        <tr><th class="px-6 py-4">Task</th><th class="px-6 py-4">Client</th><th class="px-6 py-4">Status</th><th class="px-6 py-4">Due</th></tr>
-                    </thead>
-                    <tbody id="mgmtTable" class="divide-y divide-slate-100"></tbody>
-                </table>
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                    <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Active Tasks</h3>
+                    <span id="taskCounter" class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">0 Tasks</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 font-semibold border-b">
+                            <tr>
+                                <th class="px-6 py-4">Task Name</th>
+                                <th class="px-6 py-4">List / Sprint</th>
+                                <th class="px-6 py-4">Client</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Due Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mgmtTable" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
+        <!-- PLANNING VIEW -->
         <section id="view-plan" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="md:col-span-2 glass-card p-6 h-96"><canvas id="chartCapacity"></canvas></div>
-                <div class="glass-card p-6 space-y-4" id="capacityList"></div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Total Hour Summary Card -->
+                <div class="glass-card p-6 flex flex-col justify-center items-center bg-gradient-to-br from-white to-slate-50">
+                    <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Total Estimated Hours</h3>
+                    <div id="totalSprintHours" class="text-4xl font-black text-slate-900">0.0h</div>
+                    <p class="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-tight">Current Data Set</p>
+                </div>
+                <!-- Hour Breakdown per List -->
+                <div class="md:col-span-3 glass-card p-4 overflow-x-auto">
+                    <h3 class="px-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-4">Hours per Sprint / List</h3>
+                    <div id="sprintHourList" class="flex gap-4">
+                        <!-- Sprint cards go here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 glass-card p-6">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Resource Hours by Assignee</h3>
+                    <div class="h-80"><canvas id="chartCapacity"></canvas></div>
+                </div>
+                <div class="glass-card p-6 space-y-6">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase">Capacity Health (Based on ${DEV_CAPACITY}h Limit)</h3>
+                    <div id="capacityList" class="space-y-4"></div>
+                </div>
             </div>
         </section>
 
+        <!-- CLIENT VIEW -->
         <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-6" id="clientGrid"></section>
-        <section id="view-delivery" class="tab-content hidden max-w-2xl mx-auto space-y-4" id="deliveryTimeline"></section>
+
+        <!-- DELIVERY VIEW -->
+        <section id="view-delivery" class="tab-content hidden max-w-4xl mx-auto space-y-4" id="deliveryTimeline"></section>
     </main>
 
     <script>
@@ -83,42 +146,90 @@
         let currentTab = 'mgmt';
 
         async function fetchRealData() {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+            const overlay = document.getElementById('loadingOverlay');
+            const statusText = document.getElementById('syncStatus');
+            overlay.classList.remove('hidden');
+            
             try {
                 const response = await fetch(WORKER_URL);
+                if (!response.ok) throw new Error("Sync failed. Check Worker or API Key.");
                 const data = await response.json();
-                
-                tasks = data.tasks.map(t => {
-    // 1. Get Client Name from Custom Fields
-    const clientField = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
-    
-    // 2. Get Hours (Try built-in Time Estimate first, then custom field)
-    let hours = 0;
-    if (t.time_estimate) {
-        // ClickUp stores time_estimate in milliseconds
-        hours = Math.round((t.time_estimate / 3600000) * 10) / 10; 
-    } else {
-        const hourField = t.custom_fields?.find(f => f.name.toLowerCase().includes('hour'));
-        hours = parseFloat(hourField?.value) || 0;
-    }
 
-    return {
-        name: t.name || "Untitled Task",
-        client: clientField?.value || "Internal / No Client",
-        assignee: t.assignees && t.assignees.length > 0 ? t.assignees[0].username : "Unassigned",
-        status: t.status ? t.status.status : "Open",
-        due: t.due_date ? new Date(parseInt(t.due_date)).toLocaleDateString() : "No Date",
-        hours: hours,
-        type: (t.name.toLowerCase().includes('milestone') || t.priority?.priority === 'urgent') ? 'Milestone' : 'Task'
-    };
-});
-                document.getElementById('syncStatus').innerText = "Last Sync: " + new Date().toLocaleTimeString();
-                renderView(currentTab);
+                tasks = data.tasks.map(t => {
+                    const clientField = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
+                    let clientName = "Internal";
+                    if (clientField && clientField.value !== undefined) {
+                        if (clientField.type_config && clientField.type_config.options) {
+                            const option = clientField.type_config.options.find(opt => opt.id === clientField.value || String(opt.orderindex) === String(clientField.value));
+                            clientName = option ? (option.label || option.name) : clientField.value;
+                        } else {
+                            clientName = clientField.value;
+                        }
+                    }
+                    
+                    let estimatedHours = 0;
+                    if (t.time_estimate) {
+                        estimatedHours = Math.round((t.time_estimate / 3600000) * 10) / 10;
+                    } else {
+                        const hourField = t.custom_fields?.find(f => f.name.toLowerCase().includes('hour'));
+                        estimatedHours = parseFloat(hourField?.value) || 0;
+                    }
+                    
+                    return {
+                        id: t.id,
+                        name: t.name || "Untitled Task",
+                        listName: t.list?.name || "No List",
+                        client: clientName,
+                        assignee: t.assignees && t.assignees.length > 0 ? t.assignees[0].username : "Unassigned",
+                        status: t.status ? t.status.status : "Open",
+                        urgency: t.priority?.priority || "Normal",
+                        due: t.due_date ? new Date(parseInt(t.due_date)).toLocaleDateString() : "No Date",
+                        dueDateRaw: t.due_date ? parseInt(t.due_date) : 0,
+                        hours: estimatedHours,
+                        type: (t.name.toLowerCase().includes('milestone') || t.priority?.priority === 'urgent') ? 'Milestone' : 'Task'
+                    };
+                });
+
+                statusText.innerText = "Last Sync: " + new Date().toLocaleTimeString();
+                refreshUI();
             } catch (err) {
-                document.getElementById('syncStatus').innerText = "Sync Failed";
+                statusText.innerText = "Sync Error: " + err.message;
+                console.error(err);
             } finally {
-                document.getElementById('loadingOverlay').classList.add('hidden');
+                overlay.classList.add('hidden');
             }
+        }
+
+        function refreshUI() {
+            const cf = document.getElementById('mgmtClientFilter');
+            const af = document.getElementById('mgmtAssigneeFilter');
+            const sf = document.getElementById('mgmtStatus');
+            
+            const currentC = cf.value;
+            const currentA = af.value;
+            const currentS = sf.value;
+
+            cf.innerHTML = '<option value="">All Clients</option>';
+            af.innerHTML = '<option value="">All Assignees</option>';
+            sf.innerHTML = '<option value="">All Statuses</option>';
+            
+            [...new Set(tasks.map(t => t.client))].sort().forEach(c => cf.add(new Option(c, c)));
+            [...new Set(tasks.map(t => t.assignee))].sort().forEach(a => af.add(new Option(a, a)));
+            [...new Set(tasks.map(t => t.status))].sort().forEach(s => sf.add(new Option(s, s)));
+            
+            cf.value = currentC;
+            af.value = currentA;
+            sf.value = currentS;
+            
+            renderView(currentTab);
+        }
+
+        function resetFilters() {
+            document.getElementById('mgmtSearch').value = "";
+            document.getElementById('mgmtClientFilter').value = "";
+            document.getElementById('mgmtAssigneeFilter').value = "";
+            document.getElementById('mgmtStatus').value = "";
+            renderView('mgmt');
         }
 
         function switchTab(tabId) {
@@ -133,11 +244,31 @@
         function renderView(view) {
             if (view === 'mgmt') {
                 const search = document.getElementById('mgmtSearch').value.toLowerCase();
-                const filtered = tasks.filter(t => t.name.toLowerCase().includes(search));
-                document.getElementById('mgmtTable').innerHTML = filtered.map(t => `
-                    <tr><td class="px-6 py-4 font-medium">${t.name}</td><td class="px-6 py-4 text-slate-500">${t.client}</td><td class="px-6 py-4 text-xs font-bold">${t.status}</td><td class="px-6 py-4 text-slate-400">${t.due}</td></tr>
-                `).join('');
-                updateCharts(filtered);
+                const client = document.getElementById('mgmtClientFilter').value;
+                const assignee = document.getElementById('mgmtAssigneeFilter').value;
+                const status = document.getElementById('mgmtStatus').value;
+                
+                const filtered = tasks.filter(t => 
+                    (!client || String(t.client) === String(client)) && 
+                    (!assignee || t.assignee === assignee) && 
+                    (!status || t.status === status) && 
+                    (t.name.toLowerCase().includes(search))
+                );
+
+                document.getElementById('taskCounter').innerText = `${filtered.length} Tasks`;
+                document.getElementById('mgmtTable').innerHTML = filtered.length > 0 ? filtered.map(t => `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 font-medium text-slate-900">${t.name}</td>
+                        <td class="px-6 py-4 text-slate-500">${t.listName}</td>
+                        <td class="px-6 py-4 text-slate-500">${t.client}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${t.status.toLowerCase().includes('done') ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}">${t.status}</span>
+                        </td>
+                        <td class="px-6 py-4 text-slate-400">${t.due}</td>
+                    </tr>
+                `).join('') : `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-400 italic">No tasks found matching current filters.</td></tr>`;
+                
+                updateMgmtCharts(filtered);
             } else if (view === 'plan') {
                 renderPlanning();
             } else if (view === 'client') {
@@ -147,25 +278,64 @@
             }
         }
 
-        function updateCharts(data) {
+        function updateMgmtCharts(data) {
             const stats = data.reduce((a, t) => { a[t.status] = (a[t.status]||0)+1; return a; }, {});
             const devs = data.reduce((a, t) => { a[t.assignee] = (a[t.assignee]||0)+1; return a; }, {});
+            
             if(charts.status) charts.status.destroy();
-            charts.status = new Chart(document.getElementById('chartStatus'), { type: 'doughnut', data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: ['#10b981','#f59e0b','#6366f1','#ef4444','#94a3b8'] }] }, options: { maintainAspectRatio: false, plugins: { title: { display: true, text: 'Status Distribution' }}} });
+            charts.status = new Chart(document.getElementById('chartStatus'), { 
+                type: 'doughnut', 
+                data: { labels: Object.keys(stats), datasets: [{ data: Object.values(stats), backgroundColor: ['#7c3aed','#10b981','#f59e0b','#6366f1','#ef4444','#94a3b8','#ec4899'] }] }, 
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } } 
+            });
+            
             if(charts.dev) charts.dev.destroy();
-            charts.dev = new Chart(document.getElementById('chartAssignee'), { type: 'bar', data: { labels: Object.keys(devs), datasets: [{ label: 'Tasks', data: Object.values(devs), backgroundColor: '#7c3aed' }] }, options: { maintainAspectRatio: false, plugins: { title: { display: true, text: 'Tasks per Developer' }}} });
+            charts.dev = new Chart(document.getElementById('chartAssignee'), { 
+                type: 'bar', 
+                data: { labels: Object.keys(devs), datasets: [{ label: 'Tasks', data: Object.values(devs), backgroundColor: '#7c3aed', borderRadius: 4 }] }, 
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } } } } 
+            });
         }
 
         function renderPlanning() {
+            const totalHours = tasks.reduce((sum, t) => sum + t.hours, 0);
+            document.getElementById('totalSprintHours').innerText = totalHours.toFixed(1) + 'h';
+
+            // Sprint/List Breakdown
+            const sprintHours = tasks.reduce((acc, t) => {
+                acc[t.listName] = (acc[t.listName] || 0) + t.hours;
+                return acc;
+            }, {});
+
+            document.getElementById('sprintHourList').innerHTML = Object.keys(sprintHours).map(list => `
+                <div class="glass-card p-4 min-w-[160px] flex flex-col items-center border-l-4 border-l-purple-500">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase truncate w-full text-center">${list}</span>
+                    <span class="text-xl font-black text-slate-800">${sprintHours[list].toFixed(1)}h</span>
+                </div>
+            `).join('');
+
+            // Assignee Breakdown
             const devHours = tasks.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + t.hours; return acc; }, {});
             const labels = Object.keys(devHours);
             const values = Object.values(devHours);
+
             if(charts.cap) charts.cap.destroy();
-            charts.cap = new Chart(document.getElementById('chartCapacity'), { type: 'bar', data: { labels, datasets: [{ label: 'Used Hours', data: values, backgroundColor: '#7c3aed' }, { label: 'Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9' }] }, options: { maintainAspectRatio: false, indexAxis: 'y' } });
+            charts.cap = new Chart(document.getElementById('chartCapacity'), { 
+                type: 'bar', 
+                data: { 
+                    labels, 
+                    datasets: [
+                        { label: 'Estimated Hours', data: values, backgroundColor: '#7c3aed', borderRadius: 4 }, 
+                        { label: 'Weekly Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9', borderRadius: 4 }
+                    ] 
+                }, 
+                options: { maintainAspectRatio: false, indexAxis: 'y', scales: { x: { stacked: false } } } 
+            });
+
             document.getElementById('capacityList').innerHTML = labels.map(name => {
                 const used = devHours[name];
                 const perc = Math.min((used / DEV_CAPACITY) * 100, 100);
-                return `<div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>${name}</span><span>${used}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${used > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${perc}%"></div></div></div>`;
+                return `<div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>${name}</span><span class="${used > DEV_CAPACITY ? 'text-red-600' : 'text-slate-600'}">${used.toFixed(1)}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${used > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${perc}%"></div></div></div>`;
             }).join('');
         }
 
@@ -173,21 +343,35 @@
             const clients = [...new Set(tasks.map(t => t.client))];
             document.getElementById('view-client').innerHTML = clients.map(client => {
                 const cTasks = tasks.filter(t => t.client === client);
-                const done = cTasks.filter(t => t.status.toLowerCase().includes('done')).length;
-                const progress = Math.round((done / cTasks.length) * 100) || 0;
-                return `<div class="glass-card p-6 space-y-4"><div><h4 class="font-bold text-slate-900">${client}</h4><p class="text-xs text-slate-400">${cTasks.length} Tasks</p></div><div class="text-xl font-black text-purple-600">${progress}%</div><div class="progress-bar"><div class="progress-fill bg-emerald-500" style="width: ${progress}%"></div></div></div>`;
+                const done = cTasks.filter(t => t.status.toLowerCase().includes('done') || t.status.toLowerCase().includes('complete')).length;
+                const progress = Math.round((done / cTasks.length) * 100);
+                return `<div class="glass-card p-6 space-y-4"><div><h4 class="font-bold text-slate-900">${client}</h4><p class="text-xs text-slate-400">${cTasks.length} Tasks</p></div><div class="flex justify-between items-end"><span class="text-xl font-black text-purple-600">${progress}%</span></div><div class="progress-bar"><div class="progress-fill bg-emerald-500" style="width: ${progress}%"></div></div></div>`;
             }).join('');
         }
 
         function renderDelivery() {
-            const milestones = tasks.filter(t => t.type === 'Milestone').sort((a,b) => new Date(a.due) - new Date(b.due));
-            document.getElementById('deliveryTimeline').innerHTML = milestones.length ? milestones.map(m => `
-                <div class="glass-card p-4 flex justify-between items-center"><div><div class="font-bold">${m.name}</div><div class="text-xs text-slate-500">${m.client}</div></div><div class="text-right text-xs font-bold">${m.due}</div></div>
-            `).join('') : '<p class="text-center text-slate-400 py-10">No upcoming milestones</p>';
+            const milestones = tasks.filter(t => t.type === 'Milestone' || t.urgency === 'urgent').sort((a,b) => a.dueDateRaw - b.dueDateRaw);
+            document.getElementById('view-delivery').innerHTML = milestones.length > 0 ? milestones.map(m => `
+                <div class="glass-card p-4 flex justify-between items-center hover:border-purple-200 transition-all cursor-default">
+                    <div class="flex gap-4 items-center">
+                        <div class="text-center min-w-[50px]">
+                            <div class="text-2xl font-black text-slate-800">${m.due.split('/')[0]}</div>
+                            <div class="text-[8px] font-extrabold uppercase text-slate-400">Date</div>
+                        </div>
+                        <div class="h-8 w-px bg-slate-100"></div>
+                        <div>
+                            <div class="font-bold text-slate-900">${m.name}</div>
+                            <div class="text-[10px] text-slate-500 uppercase font-medium">${m.client}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] font-bold uppercase px-2 py-1 rounded bg-slate-100 text-slate-600">${m.status}</div>
+                    </div>
+                </div>
+            `).join('') : `<div class="glass-card p-12 text-center text-slate-400 italic">No urgent milestones scheduled for this quarter.</div>`;
         }
 
         window.onload = fetchRealData;
     </script>
 </body>
 </html>
-
