@@ -81,7 +81,7 @@
             
             <div class="glass-card overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
-                    <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Active Tasks</h3>
+                    <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Quarterly Active Tasks</h3>
                     <span id="taskCounter" class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-1 rounded-full">0 Tasks</span>
                 </div>
                 <div class="overflow-x-auto">
@@ -106,9 +106,9 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <!-- Total Hour Summary Card -->
                 <div class="glass-card p-6 flex flex-col justify-center items-center bg-gradient-to-br from-white to-slate-50">
-                    <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Total Estimated Hours</h3>
+                    <h3 class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1 text-center leading-tight">Current Quarter Total Hours</h3>
                     <div id="totalSprintHours" class="text-4xl font-black text-slate-900">0.0h</div>
-                    <p class="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-tight">Current Data Set</p>
+                    <p class="text-[10px] text-slate-400 font-medium mt-1 uppercase tracking-tight" id="quarterRangeLabel">Current Quarter</p>
                 </div>
                 <!-- Hour Breakdown per List -->
                 <div class="md:col-span-3 glass-card p-4 overflow-x-auto">
@@ -155,6 +155,10 @@
                 if (!response.ok) throw new Error("Sync failed. Check Worker or API Key.");
                 const data = await response.json();
 
+                if (data.meta && data.meta.range) {
+                    document.getElementById('quarterRangeLabel').innerText = data.meta.range;
+                }
+
                 tasks = data.tasks.map(t => {
                     const clientField = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
                     let clientName = "Internal";
@@ -178,7 +182,7 @@
                     return {
                         id: t.id,
                         name: t.name || "Untitled Task",
-                        listName: t.list?.name || "No List",
+                        listName: t.list?.name || "Global List",
                         client: clientName,
                         assignee: t.assignees && t.assignees.length > 0 ? t.assignees[0].username : "Unassigned",
                         status: t.status ? t.status.status : "Open",
@@ -301,7 +305,6 @@
             const totalHours = tasks.reduce((sum, t) => sum + t.hours, 0);
             document.getElementById('totalSprintHours').innerText = totalHours.toFixed(1) + 'h';
 
-            // Sprint/List Breakdown
             const sprintHours = tasks.reduce((acc, t) => {
                 acc[t.listName] = (acc[t.listName] || 0) + t.hours;
                 return acc;
@@ -314,7 +317,6 @@
                 </div>
             `).join('');
 
-            // Assignee Breakdown
             const devHours = tasks.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + t.hours; return acc; }, {});
             const labels = Object.keys(devHours);
             const values = Object.values(devHours);
