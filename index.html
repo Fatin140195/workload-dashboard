@@ -89,18 +89,29 @@
                 const data = await response.json();
                 
                 tasks = data.tasks.map(t => {
-                    const clientField = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
-                    const hourField = t.custom_fields?.find(f => f.name.toLowerCase().includes('hour'));
-                    return {
-                        name: t.name,
-                        client: clientField?.value || "Internal",
-                        assignee: t.assignees?.[0]?.username || "Unassigned",
-                        status: t.status.status,
-                        due: t.due_date ? new Date(parseInt(t.due_date)).toLocaleDateString() : "No Date",
-                        hours: parseFloat(hourField?.value) || 0,
-                        type: t.name.toLowerCase().includes('milestone') ? 'Milestone' : 'Task'
-                    };
-                });
+    // 1. Get Client Name from Custom Fields
+    const clientField = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
+    
+    // 2. Get Hours (Try built-in Time Estimate first, then custom field)
+    let hours = 0;
+    if (t.time_estimate) {
+        // ClickUp stores time_estimate in milliseconds
+        hours = Math.round((t.time_estimate / 3600000) * 10) / 10; 
+    } else {
+        const hourField = t.custom_fields?.find(f => f.name.toLowerCase().includes('hour'));
+        hours = parseFloat(hourField?.value) || 0;
+    }
+
+    return {
+        name: t.name || "Untitled Task",
+        client: clientField?.value || "Internal / No Client",
+        assignee: t.assignees && t.assignees.length > 0 ? t.assignees[0].username : "Unassigned",
+        status: t.status ? t.status.status : "Open",
+        due: t.due_date ? new Date(parseInt(t.due_date)).toLocaleDateString() : "No Date",
+        hours: hours,
+        type: (t.name.toLowerCase().includes('milestone') || t.priority?.priority === 'urgent') ? 'Milestone' : 'Task'
+    };
+});
                 document.getElementById('syncStatus').innerText = "Last Sync: " + new Date().toLocaleTimeString();
                 renderView(currentTab);
             } catch (err) {
@@ -179,3 +190,4 @@
     </script>
 </body>
 </html>
+
