@@ -11,18 +11,40 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
-        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease; }
-        .glass-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
+        /* Z-Index Layering: Ensuring filters are on top */
+        .filter-container { position: relative; z-index: 40; }
+        .filter-dropdown { position: relative; z-index: 50; }
+        .filter-content { 
+            display: none; 
+            position: absolute; 
+            background: rgba(255, 255, 255, 0.98); 
+            backdrop-filter: blur(10px);
+            min-width: 260px; 
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15); 
+            z-index: 100; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 1rem; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            padding: 12px; 
+            margin-top: 8px; 
+        }
+        .filter-content.show { display: block; animation: slideDown 0.2s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .glass-card:hover { transform: translateY(-2px); box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1); }
         
         .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; padding: 1rem 0.75rem; color: #94a3b8; font-size: 0.75rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; }
         .tab-btn.active { border-bottom-color: #7c3aed; color: #7c3aed; }
         
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
         .modal-overlay.show { display: flex; }
         
-        .filter-content { display: none; position: absolute; background: white; min-width: 260px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); z-index: 50; border: 1px solid #e2e8f0; border-radius: 0.75rem; max-height: 400px; overflow-y: auto; padding: 12px; margin-top: 8px; }
-        .filter-content.show { display: block; animation: slideDown 0.2s ease-out; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .filter-item { display: flex; align-items: center; padding: 10px; font-size: 0.8125rem; cursor: pointer; border-radius: 0.5rem; transition: background 0.2s; user-select: none; }
+        .filter-item:hover { background: #f1f5f9; }
+        .filter-item input { margin-right: 12px; accent-color: #7c3aed; width: 18px; height: 18px; pointer-events: none; border-radius: 4px; }
 
         .st-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 12px; border-radius: 8px; display: inline-block; white-space: nowrap; letter-spacing: 0.025em; }
         .st-deployed { background: #00A884; color: white; }
@@ -47,24 +69,22 @@
 </head>
 <body class="antialiased">
 
-    <!-- DRILL-DOWN POPUP (SPLIT VIEW) -->
+    <!-- DRILL-DOWN POPUP -->
     <div id="taskListModal" class="modal-overlay" onclick="closeAllModals(event)">
         <div class="glass-card w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border-none" onclick="event.stopPropagation()">
             <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
                 <div class="flex items-center gap-4">
                     <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight" id="listModalTitle">Context Details</h2>
-                    <span id="listModalCounter" class="text-sm font-black bg-purple-100 text-purple-700 px-4 py-1.5 rounded-full shadow-inner">0</span>
+                    <span id="listModalCounter" class="text-sm font-black bg-purple-100 text-purple-700 px-4 py-1.5 rounded-full">0</span>
                 </div>
-                <button onclick="closeModal('taskListModal')" class="text-slate-300 hover:text-slate-600 p-2 transition-colors duration-200"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"></path></svg></button>
+                <button onclick="closeModal('taskListModal')" class="text-slate-300 hover:text-slate-600 p-2"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"></path></svg></button>
             </div>
             <div class="flex-1 flex overflow-hidden">
-                <!-- LHS: The interactive chart -->
                 <div class="w-1/3 border-r border-slate-100 bg-slate-50/40 p-8 flex flex-col items-center">
                     <h3 id="modalChartLabel" class="text-[10px] font-black text-slate-400 uppercase mb-8 tracking-[0.2em]">Filter List by Status</h3>
                     <div class="w-full flex-1 relative min-h-[300px]"><canvas id="modalChart"></canvas></div>
                     <p class="text-[11px] text-slate-400 mt-8 text-center font-semibold italic">Click segments to refresh data table</p>
                 </div>
-                <!-- RHS: The dynamic task table -->
                 <div class="w-2/3 flex flex-col bg-white overflow-y-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-white text-slate-400 sticky top-0 z-10 border-b border-slate-50">
@@ -100,7 +120,7 @@
                         <p id="syncStatus" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Idle</p>
                         <span id="autoSyncLabel" class="text-[10px] text-purple-500 font-black uppercase tracking-widest hidden flex items-center gap-1">
                             <span class="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span>
-                            Live Sync in: <span id="nextSyncTimer">5:00</span>
+                            Live Sync: <span id="nextSyncTimer">5:00</span>
                         </span>
                     </div>
                 </div>
@@ -127,11 +147,38 @@
 
         <!-- VIEWS -->
         <section id="view-mgmt" class="tab-content space-y-8">
-            <div class="glass-card p-5 flex flex-wrap gap-4 items-center bg-white/50">
+            <!-- Filter Bar with High Z-Index -->
+            <div class="glass-card p-5 flex flex-wrap gap-4 items-center bg-white/50 filter-container">
                 <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Quick search..." class="flex-1 min-w-[280px] px-5 py-3 text-sm bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-purple-200 outline-none transition-all font-medium">
-                <div class="flex gap-3">
-                    <div class="filter-dropdown"><button onclick="toggleFilterMenu(event, 'filterClientContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50"><span id="labelClient">All Clients</span><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button><div id="filterClientContent" class="filter-content" onclick="event.stopPropagation()"></div></div>
-                    <div class="filter-dropdown"><button onclick="toggleFilterMenu(event, 'filterAssigneeContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50"><span id="labelAssignee">All Assignees</span><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button><div id="filterAssigneeContent" class="filter-content" onclick="event.stopPropagation()"></div></div>
+                <div class="flex gap-3 flex-wrap">
+                    <div class="filter-dropdown">
+                        <button onclick="toggleFilterMenu(event, 'filterClientContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50">
+                            <span id="labelClient">All Clients</span>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="filterClientContent" class="filter-content" onclick="event.stopPropagation()"></div>
+                    </div>
+                    <div class="filter-dropdown">
+                        <button onclick="toggleFilterMenu(event, 'filterAssigneeContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50">
+                            <span id="labelAssignee">All Assignees</span>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="filterAssigneeContent" class="filter-content" onclick="event.stopPropagation()"></div>
+                    </div>
+                    <div class="filter-dropdown">
+                        <button onclick="toggleFilterMenu(event, 'filterSprintContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50">
+                            <span id="labelSprint">All Sprints</span>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="filterSprintContent" class="filter-content" onclick="event.stopPropagation()"></div>
+                    </div>
+                    <div class="filter-dropdown">
+                        <button onclick="toggleFilterMenu(event, 'filterStatusContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50">
+                            <span id="labelStatus">All Statuses</span>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="filterStatusContent" class="filter-content" onclick="event.stopPropagation()"></div>
+                    </div>
                 </div>
                 <button onclick="resetFilters()" class="text-xs font-black text-slate-400 hover:text-purple-600 uppercase tracking-widest px-4">Reset</button>
             </div>
@@ -190,7 +237,7 @@
         let nextSync = SYNC_INTERVAL;
         let isSyncing = false;
 
-        const STATUS_COLORS = { 'deployed': '#00A884', 'pendingdeployment': '#D33131', 'test': '#00B8D9', 'inreview': '#6E5DC6', 'rework': '#FFCC00', 'inprogress': '#0084FF', 'kiv': '#FF7A00', 'todo': '#D9D9D9', 'closed': '#2ecc71' };
+        const STATUS_COLORS = { 'deployed': '#00A884', 'pendingdeployment': '#D33131', 'pendingdeployement': '#D33131', 'test': '#00B8D9', 'inreview': '#6E5DC6', 'rework': '#FFCC00', 'inprogress': '#0084FF', 'kiv': '#FF7A00', 'todo': '#D9D9D9', 'closed': '#2ecc71' };
         function getStatusColor(k) { return STATUS_COLORS[k.toLowerCase().replace(/[\s-]/g, '')] || '#94a3b8'; }
 
         async function fetchRealData(showOverlay = false) {
@@ -219,7 +266,7 @@
                         priority: t.priority?.priority || "None"
                     };
                 });
-                document.getElementById('syncStatus').innerText = `Updated: ${new Date().toLocaleTimeString()}`;
+                document.getElementById('syncStatus').innerText = `Refreshed: ${new Date().toLocaleTimeString()}`;
                 document.getElementById('autoSyncLabel').classList.remove('hidden');
                 resetTimer();
                 populateFilters();
@@ -241,24 +288,90 @@
             }, 1000);
         }
 
-        function toggleFilterMenu(e, id) { e.stopPropagation(); document.querySelectorAll('.filter-content').forEach(c => { if(c.id !== id) c.classList.remove('show'); }); document.getElementById(id).classList.toggle('show'); }
+        // --- FILTER UI ---
+        function toggleFilterMenu(e, id) { 
+            e.stopPropagation(); 
+            const menu = document.getElementById(id);
+            const isShown = menu.classList.contains('show');
+            document.querySelectorAll('.filter-content').forEach(c => c.classList.remove('show')); 
+            if (!isShown) menu.classList.add('show'); 
+        }
+
         function populateFilters() {
-            const assignees = [...new Set(window.tasks.map(t => t.assignee))].sort((a,b) => a === "Unassigned" ? -1 : (b === "Unassigned" ? 1 : a.localeCompare(b)));
-            const clients = [...new Set(window.tasks.map(t => t.client))].sort();
-            const configs = { filterClientContent: { items: clients, key: 'clients', label: 'labelClient', title: 'Clients' }, filterAssigneeContent: { items: assignees, key: 'assignees', label: 'labelAssignee', title: 'Assignees' } };
+            const allAssignees = [...new Set(window.tasks.map(t => t.assignee))];
+            const sortedAssignees = allAssignees.sort((a,b) => {
+                if (a === "Unassigned") return -1;
+                if (b === "Unassigned") return 1;
+                return a.localeCompare(b);
+            });
+            const sortedClients = [...new Set(window.tasks.map(t => t.client))].sort();
+            const sortedSprints = [...new Set(window.tasks.map(t => t.sprint))].sort();
+            const sortedStatuses = [...new Set(window.tasks.map(t => t.status))].sort();
+            
+            const configs = { 
+                filterClientContent: { items: sortedClients, key: 'clients', label: 'labelClient', title: 'Clients' }, 
+                filterAssigneeContent: { items: sortedAssignees, key: 'assignees', label: 'labelAssignee', title: 'Assignees' },
+                filterSprintContent: { items: sortedSprints, key: 'sprints', label: 'labelSprint', title: 'Sprints' },
+                filterStatusContent: { items: sortedStatuses, key: 'statuses', label: 'labelStatus', title: 'Statuses' }
+            };
+            
             Object.keys(configs).forEach(id => {
                 const cfg = configs[id];
-                document.getElementById(id).innerHTML = cfg.items.map(item => `<div class="filter-item" onclick="toggleSelection(event, '${cfg.key}', '${item.replace(/'/g, "\\'")}', '${cfg.label}', '${cfg.title}')"><input type="checkbox" ${activeFilters[cfg.key].includes(item) ? 'checked' : ''}><span class="truncate">${item}</span></div>`).join('');
+                const container = document.getElementById(id);
+                if (container) {
+                    container.innerHTML = cfg.items.map(item => `
+                        <div class="filter-item" onclick="toggleSelection(event, '${cfg.key}', '${item.replace(/'/g, "\\'")}', '${cfg.label}', '${cfg.title}')">
+                            <input type="checkbox" ${activeFilters[cfg.key].includes(item) ? 'checked' : ''}>
+                            <span class="truncate font-medium text-slate-700">${item}</span>
+                        </div>
+                    `).join('');
+                }
             });
         }
-        function toggleSelection(e, key, val, labelId, title) { const idx = activeFilters[key].indexOf(val); if (idx === -1) activeFilters[key].push(val); else activeFilters[key].splice(idx, 1); const label = document.getElementById(labelId); label.innerText = activeFilters[key].length === 0 ? `All ${title}` : (activeFilters[key].length === 1 ? activeFilters[key][0] : `${activeFilters[key].length} selected`); e.currentTarget.querySelector('input').checked = activeFilters[key].includes(val); renderView(window.currentTab); }
-        function resetFilters() { activeFilters = { clients: [], assignees: [], statuses: [], sprints: [] }; ['labelClient', 'labelAssignee'].forEach(id => document.getElementById(id).innerText = `All ${id.replace('label', '')}s`); populateFilters(); renderView(window.currentTab); }
 
-        function switchTab(tabId) { window.currentTab = tabId; document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`view-${tabId}`).classList.remove('hidden'); document.getElementById(`btn-${tabId}`).classList.add('active'); renderView(tabId); }
-        
+        function toggleSelection(e, key, val, labelId, title) { 
+            e.stopPropagation(); 
+            const idx = activeFilters[key].indexOf(val); 
+            if (idx === -1) activeFilters[key].push(val); else activeFilters[key].splice(idx, 1); 
+            
+            const label = document.getElementById(labelId); 
+            label.innerText = activeFilters[key].length === 0 ? `All ${title}` : (activeFilters[key].length === 1 ? activeFilters[key][0] : `${activeFilters[key].length} selected`); 
+            
+            const cb = e.currentTarget.querySelector('input');
+            cb.checked = activeFilters[key].includes(val);
+            
+            renderView(window.currentTab); 
+        }
+
+        function resetFilters() { 
+            activeFilters = { clients: [], assignees: [], statuses: [], sprints: [] }; 
+            ['labelClient', 'labelAssignee', 'labelSprint', 'labelStatus'].forEach(id => {
+                const label = id.replace('label', '');
+                document.getElementById(id).innerText = `All ${label}s`;
+            });
+            populateFilters(); 
+            renderView(window.currentTab); 
+        }
+
+        // --- NAVIGATION ---
+        function switchTab(tabId) { 
+            window.currentTab = tabId; 
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); 
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
+            document.getElementById(`view-${tabId}`).classList.remove('hidden'); 
+            document.getElementById(`btn-${tabId}`).classList.add('active'); 
+            renderView(tabId); 
+        }
+
         function renderView(view) {
             const search = document.getElementById('mgmtSearch').value.toLowerCase();
-            window.currentFilteredTasks = window.tasks.filter(t => (activeFilters.clients.length === 0 || activeFilters.clients.includes(t.client)) && (activeFilters.assignees.length === 0 || activeFilters.assignees.includes(t.assignee)) && (t.name.toLowerCase().includes(search)));
+            window.currentFilteredTasks = window.tasks.filter(t => 
+                (activeFilters.clients.length === 0 || activeFilters.clients.includes(t.client)) && 
+                (activeFilters.assignees.length === 0 || activeFilters.assignees.includes(t.assignee)) && 
+                (activeFilters.sprints.length === 0 || activeFilters.sprints.includes(t.sprint)) && 
+                (activeFilters.statuses.length === 0 || activeFilters.statuses.includes(t.status)) && 
+                (t.name.toLowerCase().includes(search))
+            );
             
             if (view === 'mgmt') {
                 document.getElementById('taskCounter').innerText = `${window.currentFilteredTasks.length} items`;
@@ -271,15 +384,39 @@
             else if (view === 'backlog') renderBacklog(window.currentFilteredTasks);
         }
 
+        // --- CHARTING ---
         function renderCharts(data) {
             const sMap = data.reduce((a, t) => { a[t.status] = (a[t.status]||0)+1; return a; }, {});
             const dMap = data.reduce((a, t) => { a[t.assignee] = (a[t.assignee]||0)+1; return a; }, {});
+            
             if(charts.status) charts.status.destroy();
-            charts.status = new Chart(document.getElementById('chartStatus'), { type: 'doughnut', data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: Object.keys(sMap).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 20 }] }, options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { weight: '800', size: 9 } } }, datalabels: { color: '#fff', font: { weight: '900', size: 10 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } } }, cutout: '65%' } });
+            charts.status = new Chart(document.getElementById('chartStatus'), { 
+                type: 'doughnut', 
+                data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: Object.keys(sMap).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 25 }] }, 
+                options: { 
+                    maintainAspectRatio: false, 
+                    onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, 
+                    plugins: { 
+                        legend: { 
+                            display: true, position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { weight: '800', size: 9 } } 
+                        }, 
+                        datalabels: { 
+                            color: '#fff', font: { weight: '900', size: 10 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } 
+                        } 
+                    },
+                    cutout: '65%'
+                } 
+            });
+
             if(charts.dev) charts.dev.destroy();
-            charts.dev = new Chart(document.getElementById('chartAssignee'), { type: 'bar', data: { labels: Object.keys(dMap), datasets: [{ label: 'Tasks', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 8, barThickness: 24 }] }, options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.dev.data.labels[i[0].index], 'assignee'); }, plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false }, border: { display: false } }, x: { grid: { display: false }, border: { display: false }, ticks: { font: { weight: '700', size: 10 } } } } } });
+            charts.dev = new Chart(document.getElementById('chartAssignee'), { 
+                type: 'bar', 
+                data: { labels: Object.keys(dMap), datasets: [{ label: 'Tasks', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 8, barThickness: 24 }] }, 
+                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.dev.data.labels[i[0].index], 'assignee'); }, plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { weight: '700', size: 10 } } } } } 
+            });
         }
 
+        // --- POPUPS & INTERACTION ---
         function openDrillDownPopup(val, type) {
             document.getElementById('listModalTitle').innerText = val;
             renderModalChart(type, val);
@@ -294,14 +431,13 @@
             
             charts.modal = new Chart(document.getElementById('modalChart'), { 
                 type: 'doughnut', 
-                data: { labels: Object.keys(map), datasets: [{ data: Object.values(map), backgroundColor: Object.keys(map).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 15 }] }, 
+                data: { labels: Object.keys(map), datasets: [{ data: Object.values(map), backgroundColor: Object.keys(map).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 20 }] }, 
                 options: { 
                     maintainAspectRatio: false, 
-                    // CRITICAL: selection logic fix
-                    onClick: (e, i) => { 
+                    onClick: function(e, i) { 
                         if (i.length > 0) {
                             const index = i[0].index;
-                            const newSubVal = charts.modal.data.labels[index];
+                            const newSubVal = this.data.labels[index];
                             refreshDrillDownList(type, initial, newSubVal); 
                         }
                     }, 
@@ -357,7 +493,7 @@
 
         function renderClientProgress(data) {
             const clients = [...new Set(data.map(t => t.client))];
-            document.getElementById('view-client').innerHTML = clients.map(c => {
+            document.getElementById('clientGrid').innerHTML = clients.map(c => {
                 const ct = data.filter(t => t.client === c);
                 const done = ct.filter(t => t.isClosed).length;
                 const prog = ct.length > 0 ? Math.round((done / ct.length) * 100) : 0;
@@ -374,7 +510,7 @@
         function renderNoDeadline(data) {
             const f = data.filter(t => !t.dueDate);
             document.getElementById('noDeadlineCounter').innerText = f.length;
-            document.getElementById('noDeadlineTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-800">${t.name}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.assignee}</td></tr>`).join('') || '<tr><td class="p-20 text-center font-black text-slate-300">SCHEDULE COMPLETE</td></tr>';
+            document.getElementById('noDeadlineTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-900">${t.name}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.assignee}</td></tr>`).join('') || '<tr><td class="p-20 text-center font-black text-slate-300">SCHEDULE COMPLETE</td></tr>';
         }
 
         function renderBacklog(data) {
