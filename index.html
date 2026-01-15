@@ -10,43 +10,55 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; height: 100vh; overflow-x: hidden; }
         
-        /* Z-Index Layering: Ensuring filters are on top */
-        .filter-container { position: relative; z-index: 40; }
-        .filter-dropdown { position: relative; z-index: 50; }
+        /* Layering Fix: Ensuring filters and modals are on top */
+        .filter-container { position: relative; z-index: 100; }
+        .filter-dropdown { position: relative; }
         .filter-content { 
             display: none; 
             position: absolute; 
-            background: rgba(255, 255, 255, 0.98); 
+            background: rgba(255, 255, 255, 0.99); 
             backdrop-filter: blur(10px);
-            min-width: 260px; 
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15); 
-            z-index: 100; 
+            min-width: 280px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+            z-index: 500; 
             border: 1px solid #e2e8f0; 
             border-radius: 1rem; 
             max-height: 400px; 
             overflow-y: auto; 
             padding: 12px; 
-            margin-top: 8px; 
+            margin-top: 10px; 
         }
-        .filter-content.show { display: block; animation: slideDown 0.2s ease-out; }
+        .filter-content.show { display: block; animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .glass-card:hover { transform: translateY(-2px); box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1); }
+        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
         
-        .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; padding: 1rem 0.75rem; color: #94a3b8; font-size: 0.75rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; }
+        .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; padding: 1.25rem 1rem; color: #94a3b8; font-size: 0.75rem; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 0.075em; }
         .tab-btn.active { border-bottom-color: #7c3aed; color: #7c3aed; }
         
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+        /* Modal Layering: taskDetail must be above taskList */
+        .modal-overlay { 
+            display: none; 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(15, 23, 42, 0.8); 
+            backdrop-filter: blur(8px); 
+            z-index: 1000; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 2rem; 
+        }
+        #taskListModal { z-index: 1100; }
+        #taskDetailModal { z-index: 1200; } /* Priority over drill-down */
         .modal-overlay.show { display: flex; }
         
-        .filter-item { display: flex; align-items: center; padding: 10px; font-size: 0.8125rem; cursor: pointer; border-radius: 0.5rem; transition: background 0.2s; user-select: none; }
+        .filter-item { display: flex; align-items: center; padding: 10px 14px; font-size: 0.85rem; cursor: pointer; border-radius: 0.75rem; transition: background 0.2s; user-select: none; font-weight: 500; }
         .filter-item:hover { background: #f1f5f9; }
-        .filter-item input { margin-right: 12px; accent-color: #7c3aed; width: 18px; height: 18px; pointer-events: none; border-radius: 4px; }
+        .filter-item input { margin-right: 14px; accent-color: #7c3aed; width: 18px; height: 18px; pointer-events: none; border-radius: 6px; }
 
-        .st-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 12px; border-radius: 8px; display: inline-block; white-space: nowrap; letter-spacing: 0.025em; }
+        .st-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 12px; border-radius: 8px; display: inline-block; white-space: nowrap; letter-spacing: 0.05em; }
         .st-deployed { background: #00A884; color: white; }
         .st-pendingdeployment, .st-pendingdeployement { background: #D33131; color: white; }
         .st-test { background: #00B8D9; color: white; }
@@ -57,38 +69,42 @@
         .st-todo { background: #D9D9D9; color: #475569; }
         .st-closed { background: #2ecc71; color: white; }
         
-        .progress-bar { height: 10px; border-radius: 5px; background: #f1f5f9; overflow: hidden; }
-        .progress-fill { height: 100%; transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .progress-bar { height: 12px; border-radius: 6px; background: #f1f5f9; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
-        @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.95); } }
-        .alert-pulse { animation: pulse-red 1.5s infinite; }
+        @keyframes pulse-alert { 0%, 100% { background-color: #dc2626; transform: scale(1); } 50% { background-color: #ef4444; transform: scale(0.95); } }
+        .alert-pulse { animation: pulse-alert 1.5s infinite; }
         
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="antialiased">
 
-    <!-- DRILL-DOWN POPUP -->
+    <!-- DRILL-DOWN POPUP (SPLIT VIEW) -->
     <div id="taskListModal" class="modal-overlay" onclick="closeAllModals(event)">
-        <div class="glass-card w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border-none" onclick="event.stopPropagation()">
-            <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
-                <div class="flex items-center gap-4">
-                    <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight" id="listModalTitle">Context Details</h2>
-                    <span id="listModalCounter" class="text-sm font-black bg-purple-100 text-purple-700 px-4 py-1.5 rounded-full">0</span>
+        <div class="glass-card w-full max-w-6xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border-none" onclick="event.stopPropagation()">
+            <div class="px-8 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                <div class="flex items-center gap-5">
+                    <h2 class="text-2xl font-black text-slate-800 tracking-tighter" id="listModalTitle">Context Overview</h2>
+                    <span id="listModalCounter" class="text-sm font-black bg-purple-100 text-purple-700 px-4 py-1.5 rounded-2xl shadow-inner">0 items</span>
                 </div>
-                <button onclick="closeModal('taskListModal')" class="text-slate-300 hover:text-slate-600 p-2"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"></path></svg></button>
+                <button onclick="closeModal('taskListModal')" class="text-slate-400 hover:text-slate-600 p-2 transition-all duration-200">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </button>
             </div>
             <div class="flex-1 flex overflow-hidden">
-                <div class="w-1/3 border-r border-slate-100 bg-slate-50/40 p-8 flex flex-col items-center">
-                    <h3 id="modalChartLabel" class="text-[10px] font-black text-slate-400 uppercase mb-8 tracking-[0.2em]">Filter List by Status</h3>
-                    <div class="w-full flex-1 relative min-h-[300px]"><canvas id="modalChart"></canvas></div>
-                    <p class="text-[11px] text-slate-400 mt-8 text-center font-semibold italic">Click segments to refresh data table</p>
+                <!-- LHS: Interactive chart -->
+                <div class="w-1/3 border-r border-slate-100 bg-slate-50/50 p-8 flex flex-col items-center">
+                    <h3 id="modalChartLabel" class="text-[10px] font-black text-slate-400 uppercase mb-6 tracking-[0.2em] text-center">Interactive Filter</h3>
+                    <div class="w-full flex-1 relative min-h-[300px] max-h-[400px]"><canvas id="modalChart"></canvas></div>
+                    <p class="text-[11px] text-slate-400 mt-4 text-center font-bold italic">Click chart segments to update table</p>
                 </div>
+                <!-- RHS: Task table -->
                 <div class="w-2/3 flex flex-col bg-white overflow-y-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-white text-slate-400 sticky top-0 z-10 border-b border-slate-50">
-                            <tr><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Task</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Sprint</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]" id="listModalCol3">Info</th></tr>
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead class="bg-white text-slate-400 sticky top-0 z-10 border-b border-slate-50 shadow-sm">
+                            <tr><th class="px-8 py-4 font-black uppercase tracking-widest text-[10px]">Requirement</th><th class="px-8 py-4 font-black uppercase tracking-widest text-[10px]">Sprint</th><th class="px-8 py-4 font-black uppercase tracking-widest text-[10px]" id="listModalCol3">Info</th></tr>
                         </thead>
                         <tbody id="listModalTableBody" class="divide-y divide-slate-50"></tbody>
                     </table>
@@ -99,109 +115,111 @@
 
     <!-- TASK DETAIL POPUP -->
     <div id="taskDetailModal" class="modal-overlay" onclick="closeAllModals(event)">
-        <div class="glass-card w-full max-w-2xl overflow-hidden shadow-2xl border-none" onclick="event.stopPropagation()">
-            <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
-                <h2 class="text-lg font-black text-slate-800 tracking-tight">Requirement Details</h2>
-                <button onclick="closeModal('taskDetailModal')" class="text-slate-300 hover:text-slate-600 p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"></path></svg></button>
+        <div class="glass-card w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl border-none flex flex-col" onclick="event.stopPropagation()">
+            <div class="px-8 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                <h2 class="text-sm font-black text-slate-400 uppercase tracking-widest">Requirement Detail View</h2>
+                <button onclick="closeModal('taskDetailModal')" class="text-slate-400 hover:text-slate-600 p-2 transition-all duration-200">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </button>
             </div>
-            <div class="p-10 space-y-8 bg-white" id="detailContent"></div>
+            <div class="p-10 space-y-8 bg-white overflow-y-auto" id="detailContent"></div>
         </div>
     </div>
 
-    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-[1600px] mx-auto px-6 h-20 flex justify-between items-center">
+    <header class="bg-white/90 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-[150]">
+        <div class="max-w-[1600px] mx-auto px-6 h-20 flex justify-between items-center text-slate-900">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-gradient-to-tr from-purple-700 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-purple-200">
+                <div class="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl flex items-center justify-center shadow-xl">
                     <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" stroke-width="2"></path></svg>
                 </div>
                 <div>
-                    <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Project Engine</h1>
+                    <h1 class="text-xl font-black tracking-tighter">Sprint Console</h1>
                     <div class="flex items-center gap-2">
-                        <p id="syncStatus" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Idle</p>
-                        <span id="autoSyncLabel" class="text-[10px] text-purple-500 font-black uppercase tracking-widest hidden flex items-center gap-1">
+                        <p id="syncStatus" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Awaiting Sync</p>
+                        <span id="autoSyncLabel" class="text-[10px] text-purple-600 font-black uppercase tracking-widest hidden flex items-center gap-1">
                             <span class="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span>
-                            Live Sync: <span id="nextSyncTimer">5:00</span>
+                            Live Sync in: <span id="nextSyncTimer">5:00</span>
                         </span>
                     </div>
                 </div>
             </div>
-            <nav class="flex bg-slate-100 p-1.5 rounded-2xl">
-                <div onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active px-5 rounded-xl">Management</div>
-                <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn px-5 rounded-xl">Planning</div>
-                <div onclick="switchTab('client')" id="btn-client" class="tab-btn px-5 rounded-xl">Client</div>
-                <div onclick="switchTab('unassigned')" id="btn-unassigned" class="tab-btn px-5 rounded-xl">Attention</div>
-                <div onclick="switchTab('no-deadline')" id="btn-no-deadline" class="tab-btn px-5 rounded-xl">Deadlines</div>
-                <div onclick="switchTab('backlog')" id="btn-backlog" class="tab-btn px-5 rounded-xl">Requirements</div>
+            <nav class="flex bg-slate-100 p-1 rounded-xl">
+                <div onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active px-4 rounded-lg">Management</div>
+                <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn px-4 rounded-lg">Planning</div>
+                <div onclick="switchTab('client')" id="btn-client" class="tab-btn px-4 rounded-lg">Clients</div>
+                <div onclick="switchTab('unassigned')" id="btn-unassigned" class="tab-btn px-4 rounded-lg">Attention</div>
+                <div onclick="switchTab('no-deadline')" id="btn-no-deadline" class="tab-btn px-4 rounded-lg">Deadlines</div>
+                <div onclick="switchTab('backlog')" id="btn-backlog" class="tab-btn px-4 rounded-lg">Backlog</div>
             </nav>
-            <button onclick="fetchRealData(true)" class="bg-slate-900 text-white text-[11px] px-6 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95">Refresh Data</button>
+            <button onclick="fetchRealData(true)" class="bg-slate-900 text-white text-[11px] px-6 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95">Manual Sync</button>
         </div>
     </header>
 
-    <main class="max-w-[1600px] mx-auto px-6 py-10">
-        <div id="loadingOverlay" class="fixed inset-0 bg-white/60 backdrop-blur-sm z-[60] flex items-center justify-center hidden">
-            <div class="flex flex-col items-center gap-4">
-                <div class="w-14 h-14 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                <p class="text-xs font-black text-slate-800 uppercase tracking-[0.3em]">Refreshing Console...</p>
+    <main class="max-w-[1600px] mx-auto px-6 py-8">
+        <div id="loadingOverlay" class="fixed inset-0 bg-white/70 backdrop-blur-md z-[300] flex items-center justify-center hidden">
+            <div class="flex flex-col items-center gap-5">
+                <div class="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm font-black text-slate-900 uppercase tracking-[0.4em]">Syncing workspace data...</p>
             </div>
         </div>
 
-        <!-- VIEWS -->
         <section id="view-mgmt" class="tab-content space-y-8">
-            <!-- Filter Bar with High Z-Index -->
-            <div class="glass-card p-5 flex flex-wrap gap-4 items-center bg-white/50 filter-container">
-                <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Quick search..." class="flex-1 min-w-[280px] px-5 py-3 text-sm bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-purple-200 outline-none transition-all font-medium">
-                <div class="flex gap-3 flex-wrap">
+            <div class="glass-card p-5 flex flex-wrap gap-5 items-center bg-white/60 filter-container">
+                <div class="flex-1 min-w-[300px]">
+                    <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Search project inventory..." class="w-full px-6 py-3.5 text-sm bg-slate-100 border-none rounded-xl focus:ring-4 focus:ring-purple-100 outline-none transition-all font-bold text-slate-700 shadow-inner">
+                </div>
+                <div class="flex gap-4 flex-wrap">
                     <div class="filter-dropdown">
-                        <button onclick="toggleFilterMenu(event, 'filterClientContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50">
+                        <button onclick="toggleFilterMenu(event, 'filterClientContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest min-w-[170px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
                             <span id="labelClient">All Clients</span>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
                         </button>
                         <div id="filterClientContent" class="filter-content" onclick="event.stopPropagation()"></div>
                     </div>
                     <div class="filter-dropdown">
-                        <button onclick="toggleFilterMenu(event, 'filterAssigneeContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50">
+                        <button onclick="toggleFilterMenu(event, 'filterAssigneeContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest min-w-[170px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
                             <span id="labelAssignee">All Assignees</span>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
                         </button>
                         <div id="filterAssigneeContent" class="filter-content" onclick="event.stopPropagation()"></div>
                     </div>
                     <div class="filter-dropdown">
-                        <button onclick="toggleFilterMenu(event, 'filterSprintContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50">
+                        <button onclick="toggleFilterMenu(event, 'filterSprintContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest min-w-[170px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
                             <span id="labelSprint">All Sprints</span>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
                         </button>
                         <div id="filterSprintContent" class="filter-content" onclick="event.stopPropagation()"></div>
                     </div>
                     <div class="filter-dropdown">
-                        <button onclick="toggleFilterMenu(event, 'filterStatusContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50">
+                        <button onclick="toggleFilterMenu(event, 'filterStatusContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest min-w-[170px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
                             <span id="labelStatus">All Statuses</span>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
                         </button>
                         <div id="filterStatusContent" class="filter-content" onclick="event.stopPropagation()"></div>
                     </div>
                 </div>
-                <button onclick="resetFilters()" class="text-xs font-black text-slate-400 hover:text-purple-600 uppercase tracking-widest px-4">Reset</button>
+                <button onclick="resetFilters()" class="text-xs font-black text-slate-400 hover:text-purple-600 uppercase tracking-[0.2em] px-4">Reset</button>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div class="glass-card p-8 h-[450px] relative flex flex-col">
-                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em] text-center">Sprint Health Distribution</h3>
+                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em] text-center">Sprint Health Mix</h3>
                     <div class="flex-1 relative"><canvas id="chartStatus"></canvas></div>
                 </div>
                 <div class="glass-card p-8 h-[450px] relative flex flex-col">
-                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em] text-center">Team Workload Allocation</h3>
+                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em] text-center">Dev Workload</h3>
                     <div class="flex-1 relative"><canvas id="chartAssignee"></canvas></div>
                 </div>
             </div>
 
-            <div class="glass-card overflow-hidden">
+            <div class="glass-card overflow-hidden border-none shadow-xl">
                 <div class="px-8 py-5 border-b border-slate-50 bg-white flex justify-between items-center">
                     <h3 class="text-xs font-black uppercase text-slate-400 tracking-widest">Active Inventory</h3>
-                    <span id="taskCounter" class="text-xs font-black bg-purple-100 text-purple-700 px-4 py-1.5 rounded-full">0 items</span>
+                    <span id="taskCounter" class="text-xs font-black bg-purple-100 text-purple-700 px-5 py-2 rounded-full shadow-inner">0 items</span>
                 </div>
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 text-slate-400 border-b border-slate-50">
-                        <tr><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Name</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Status</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Sprint</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Assignee</th></tr>
+                        <tr><th class="px-10 py-5 font-black uppercase tracking-widest text-[10px]">Name</th><th class="px-10 py-5 font-black uppercase tracking-widest text-[10px]">Status</th><th class="px-10 py-5 font-black uppercase tracking-widest text-[10px]">Sprint</th><th class="px-10 py-5 font-black uppercase tracking-widest text-[10px]">Assignee</th></tr>
                     </thead>
                     <tbody id="mgmtTable" class="divide-y divide-slate-50 bg-white"></tbody>
                 </table>
@@ -211,18 +229,15 @@
         <section id="view-plan" class="tab-content hidden space-y-8">
             <div id="planSummary" class="grid grid-cols-1 md:grid-cols-4 gap-8"></div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 glass-card p-8 h-[500px] relative flex flex-col">
-                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em]">Capacity Management</h3>
-                    <div class="flex-1 relative"><canvas id="chartCapacity"></canvas></div>
-                </div>
-                <div class="glass-card p-8 space-y-6 overflow-y-auto max-h-[500px] bg-slate-50/20" id="capacityList"></div>
+                <div class="lg:col-span-2 glass-card p-10 h-[500px] relative flex flex-col"><canvas id="chartCapacity"></canvas></div>
+                <div class="glass-card p-10 space-y-6 overflow-y-auto max-h-[500px] bg-slate-50/20" id="capacityList"></div>
             </div>
         </section>
 
         <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-8" id="clientGrid"></section>
-        <section id="view-unassigned" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-orange-600 tracking-widest italic">High Priority: Unassigned Tasks</h3><span id="unassignedCounter" class="text-xs font-black bg-orange-100 text-orange-600 px-4 py-1.5 rounded-full">0</span></div><table class="w-full text-left text-sm"><tbody id="unassignedTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
-        <section id="view-no-deadline" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-blue-600 tracking-widest">Tasks Without Commitment Dates</h3><span id="noDeadlineCounter" class="text-xs font-black bg-blue-100 text-blue-600 px-4 py-1.5 rounded-full">0</span></div><table class="w-full text-left text-sm"><tbody id="noDeadlineTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
-        <section id="view-backlog" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-slate-500 tracking-widest">Requirements & Product Docs</h3><span id="backlogCounter" class="text-xs font-black bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full">0</span></div><table class="w-full text-left text-sm"><tbody id="backlogTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        <section id="view-unassigned" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-red-600 tracking-[0.3em] italic">Unassigned Attention List</h3><span id="unassignedCounter" class="text-xs font-black bg-red-100 text-red-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="unassignedTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        <section id="view-no-deadline" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-blue-600 tracking-widest">Unscheduled commitments</h3><span id="noDeadlineCounter" class="text-xs font-black bg-blue-100 text-blue-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="noDeadlineTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        <section id="view-backlog" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-slate-500 tracking-widest">Requirements & Product Docs</h3><span id="backlogCounter" class="text-xs font-black bg-slate-100 text-slate-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="backlogTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
     </main>
 
     <script>
@@ -237,14 +252,14 @@
         let nextSync = SYNC_INTERVAL;
         let isSyncing = false;
 
-        const STATUS_COLORS = { 'deployed': '#00A884', 'pendingdeployment': '#D33131', 'pendingdeployement': '#D33131', 'test': '#00B8D9', 'inreview': '#6E5DC6', 'rework': '#FFCC00', 'inprogress': '#0084FF', 'kiv': '#FF7A00', 'todo': '#D9D9D9', 'closed': '#2ecc71' };
+        const STATUS_COLORS = { 'deployed': '#00A884', 'pendingdeployment': '#D33131', 'test': '#00B8D9', 'inreview': '#6E5DC6', 'rework': '#FFCC00', 'inprogress': '#0084FF', 'kiv': '#FF7A00', 'todo': '#D9D9D9', 'closed': '#2ecc71' };
         function getStatusColor(k) { return STATUS_COLORS[k.toLowerCase().replace(/[\s-]/g, '')] || '#94a3b8'; }
 
         async function fetchRealData(showOverlay = false) {
             if (isSyncing) return;
             isSyncing = true;
             if (showOverlay) document.getElementById('loadingOverlay').classList.remove('hidden');
-            document.getElementById('syncStatus').innerText = "Syncing...";
+            document.getElementById('syncStatus').innerText = "REFRESHING...";
             try {
                 const res = await fetch("https://dashboard.fatin-rasyidah.workers.dev/");
                 const json = await res.json();
@@ -266,7 +281,7 @@
                         priority: t.priority?.priority || "None"
                     };
                 });
-                document.getElementById('syncStatus').innerText = `Refreshed: ${new Date().toLocaleTimeString()}`;
+                document.getElementById('syncStatus').innerText = `UPDATED: ${new Date().toLocaleTimeString()}`;
                 document.getElementById('autoSyncLabel').classList.remove('hidden');
                 resetTimer();
                 populateFilters();
@@ -277,7 +292,7 @@
 
         function resetTimer() {
             nextSync = SYNC_INTERVAL;
-            clearInterval(window.syncInterval);
+            if (window.syncInterval) clearInterval(window.syncInterval);
             window.syncInterval = setInterval(() => {
                 nextSync--;
                 if (nextSync <= 0) fetchRealData(false);
@@ -288,7 +303,6 @@
             }, 1000);
         }
 
-        // --- FILTER UI ---
         function toggleFilterMenu(e, id) { 
             e.stopPropagation(); 
             const menu = document.getElementById(id);
@@ -298,33 +312,23 @@
         }
 
         function populateFilters() {
-            const allAssignees = [...new Set(window.tasks.map(t => t.assignee))];
-            const sortedAssignees = allAssignees.sort((a,b) => {
-                if (a === "Unassigned") return -1;
-                if (b === "Unassigned") return 1;
-                return a.localeCompare(b);
-            });
-            const sortedClients = [...new Set(window.tasks.map(t => t.client))].sort();
-            const sortedSprints = [...new Set(window.tasks.map(t => t.sprint))].sort();
-            const sortedStatuses = [...new Set(window.tasks.map(t => t.status))].sort();
+            const assignees = [...new Set(window.tasks.map(t => t.assignee))].sort((a,b) => a === "Unassigned" ? -1 : (b === "Unassigned" ? 1 : a.localeCompare(b)));
+            const clients = [...new Set(window.tasks.map(t => t.client))].sort();
+            const sprints = [...new Set(window.tasks.map(t => t.sprint))].sort();
+            const statuses = [...new Set(window.tasks.map(t => t.status))].sort();
             
             const configs = { 
-                filterClientContent: { items: sortedClients, key: 'clients', label: 'labelClient', title: 'Clients' }, 
-                filterAssigneeContent: { items: sortedAssignees, key: 'assignees', label: 'labelAssignee', title: 'Assignees' },
-                filterSprintContent: { items: sortedSprints, key: 'sprints', label: 'labelSprint', title: 'Sprints' },
-                filterStatusContent: { items: sortedStatuses, key: 'statuses', label: 'labelStatus', title: 'Statuses' }
+                filterClientContent: { items: clients, key: 'clients', label: 'labelClient', title: 'Clients' }, 
+                filterAssigneeContent: { items: assignees, key: 'assignees', label: 'labelAssignee', title: 'Assignees' },
+                filterSprintContent: { items: sprints, key: 'sprints', label: 'labelSprint', title: 'Sprints' },
+                filterStatusContent: { items: statuses, key: 'statuses', label: 'labelStatus', title: 'Statuses' }
             };
             
             Object.keys(configs).forEach(id => {
                 const cfg = configs[id];
                 const container = document.getElementById(id);
                 if (container) {
-                    container.innerHTML = cfg.items.map(item => `
-                        <div class="filter-item" onclick="toggleSelection(event, '${cfg.key}', '${item.replace(/'/g, "\\'")}', '${cfg.label}', '${cfg.title}')">
-                            <input type="checkbox" ${activeFilters[cfg.key].includes(item) ? 'checked' : ''}>
-                            <span class="truncate font-medium text-slate-700">${item}</span>
-                        </div>
-                    `).join('');
+                    container.innerHTML = cfg.items.map(item => `<div class="filter-item" onclick="toggleSelection(event, '${cfg.key}', '${item.replace(/'/g, "\\'")}', '${cfg.label}', '${cfg.title}')"><input type="checkbox" ${activeFilters[cfg.key].includes(item) ? 'checked' : ''}><span class="truncate">${item}</span></div>`).join('');
                 }
             });
         }
@@ -333,13 +337,8 @@
             e.stopPropagation(); 
             const idx = activeFilters[key].indexOf(val); 
             if (idx === -1) activeFilters[key].push(val); else activeFilters[key].splice(idx, 1); 
-            
-            const label = document.getElementById(labelId); 
-            label.innerText = activeFilters[key].length === 0 ? `All ${title}` : (activeFilters[key].length === 1 ? activeFilters[key][0] : `${activeFilters[key].length} selected`); 
-            
-            const cb = e.currentTarget.querySelector('input');
-            cb.checked = activeFilters[key].includes(val);
-            
+            document.getElementById(labelId).innerText = activeFilters[key].length === 0 ? `All ${title}` : (activeFilters[key].length === 1 ? activeFilters[key][0] : `${activeFilters[key].length} selected`); 
+            e.currentTarget.querySelector('input').checked = activeFilters[key].includes(val); 
             renderView(window.currentTab); 
         }
 
@@ -353,7 +352,6 @@
             renderView(window.currentTab); 
         }
 
-        // --- NAVIGATION ---
         function switchTab(tabId) { 
             window.currentTab = tabId; 
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); 
@@ -365,17 +363,11 @@
 
         function renderView(view) {
             const search = document.getElementById('mgmtSearch').value.toLowerCase();
-            window.currentFilteredTasks = window.tasks.filter(t => 
-                (activeFilters.clients.length === 0 || activeFilters.clients.includes(t.client)) && 
-                (activeFilters.assignees.length === 0 || activeFilters.assignees.includes(t.assignee)) && 
-                (activeFilters.sprints.length === 0 || activeFilters.sprints.includes(t.sprint)) && 
-                (activeFilters.statuses.length === 0 || activeFilters.statuses.includes(t.status)) && 
-                (t.name.toLowerCase().includes(search))
-            );
+            window.currentFilteredTasks = window.tasks.filter(t => (activeFilters.clients.length === 0 || activeFilters.clients.includes(t.client)) && (activeFilters.assignees.length === 0 || activeFilters.assignees.includes(t.assignee)) && (activeFilters.sprints.length === 0 || activeFilters.sprints.includes(t.sprint)) && (activeFilters.statuses.length === 0 || activeFilters.statuses.includes(t.status)) && (t.name.toLowerCase().includes(search)));
             
             if (view === 'mgmt') {
                 document.getElementById('taskCounter').innerText = `${window.currentFilteredTasks.length} items`;
-                document.getElementById('mgmtTable').innerHTML = window.currentFilteredTasks.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-5 font-black text-slate-800">${t.name}</td><td class="px-8 py-5"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-8 py-5 text-slate-400 font-bold">${t.sprint}</td><td class="px-8 py-5 text-slate-500 font-medium">${t.assignee}</td></tr>`).join('');
+                document.getElementById('mgmtTable').innerHTML = window.currentFilteredTasks.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-10 py-6 font-black text-slate-800 tracking-tight">${t.name}</td><td class="px-10 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-10 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-10 py-6 text-slate-500 font-medium">${t.assignee}</td></tr>`).join('');
                 renderCharts(window.currentFilteredTasks);
             } else if (view === 'plan') renderPlanning(window.currentFilteredTasks);
             else if (view === 'client') renderClientProgress(window.currentFilteredTasks);
@@ -384,39 +376,23 @@
             else if (view === 'backlog') renderBacklog(window.currentFilteredTasks);
         }
 
-        // --- CHARTING ---
         function renderCharts(data) {
             const sMap = data.reduce((a, t) => { a[t.status] = (a[t.status]||0)+1; return a; }, {});
             const dMap = data.reduce((a, t) => { a[t.assignee] = (a[t.assignee]||0)+1; return a; }, {});
-            
             if(charts.status) charts.status.destroy();
             charts.status = new Chart(document.getElementById('chartStatus'), { 
                 type: 'doughnut', 
                 data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: Object.keys(sMap).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 25 }] }, 
-                options: { 
-                    maintainAspectRatio: false, 
-                    onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, 
-                    plugins: { 
-                        legend: { 
-                            display: true, position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { weight: '800', size: 9 } } 
-                        }, 
-                        datalabels: { 
-                            color: '#fff', font: { weight: '900', size: 10 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } 
-                        } 
-                    },
-                    cutout: '65%'
-                } 
+                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { weight: '800', size: 9 } } }, datalabels: { color: '#fff', font: { weight: '900', size: 10 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } } }, cutout: '65%' } 
             });
-
             if(charts.dev) charts.dev.destroy();
             charts.dev = new Chart(document.getElementById('chartAssignee'), { 
                 type: 'bar', 
-                data: { labels: Object.keys(dMap), datasets: [{ label: 'Tasks', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 8, barThickness: 24 }] }, 
+                data: { labels: Object.keys(dMap), datasets: [{ label: 'Requirements', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 8, barThickness: 24 }] }, 
                 options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.dev.data.labels[i[0].index], 'assignee'); }, plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { weight: '700', size: 10 } } } } } 
             });
         }
 
-        // --- POPUPS & INTERACTION ---
         function openDrillDownPopup(val, type) {
             document.getElementById('listModalTitle').innerText = val;
             renderModalChart(type, val);
@@ -442,7 +418,7 @@
                         }
                     }, 
                     plugins: { 
-                        legend: { position: 'bottom', labels: { font: { weight: '800', size: 9 }, usePointStyle: true } }, 
+                        legend: { position: 'bottom', labels: { font: { weight: '800', size: 10 }, usePointStyle: true } }, 
                         datalabels: { color: '#fff', font: { weight: '900' }, formatter: (v, ctx) => { let s = 0; ctx.chart.data.datasets[0].data.map(d => s += d); return (v*100/s).toFixed(0)+"%"; } } 
                     },
                     cutout: '60%'
@@ -456,24 +432,26 @@
             if (type === 'client') f = window.tasks.filter(t => t.client === val && (sub ? t.status === sub : true));
             else if (type === 'assignee') f = window.tasks.filter(t => t.assignee === val && (sub ? t.status === sub : true));
             else f = window.tasks.filter(t => t.status === displayVal);
-            
             document.getElementById('listModalTitle').innerText = (type === 'client' || type === 'assignee') ? `${val} ${sub ? ' - ' + sub : ''}` : displayVal;
-            document.getElementById('listModalCounter').innerText = f.length;
-            document.getElementById('listModalTableBody').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-5"><div class="font-bold text-slate-800">${t.name}</div><div class="text-[10px] text-slate-400 uppercase font-black tracking-widest">${t.client}</div></td><td class="px-8 py-5 text-slate-500 font-bold">${t.sprint}</td><td class="px-8 py-5"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('');
+            document.getElementById('listModalCounter').innerText = `${f.length} items`;
+            document.getElementById('listModalTableBody').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6"><div class="font-black text-slate-800 tracking-tight text-base">${t.name}</div><div class="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">${t.client}</div></td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('');
         }
 
         function openTaskDetail(id) {
             const t = window.tasks.find(x => x.id === id); if (!t) return;
             document.getElementById('detailContent').innerHTML = `
-                <div><h3 class="text-3xl font-black text-slate-900 leading-tight">${t.name}</h3><div class="text-[11px] font-black text-purple-600 uppercase mt-3 tracking-[0.2em]">Requirement Reference</div></div>
-                <div class="grid grid-cols-2 gap-8 py-8 border-y border-slate-100">
-                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Workflow Status</p><span class="st-badge st-${t.statusKey}">${t.status}</span></div>
-                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Assignee</p><p class="font-bold text-slate-800">${t.assignee}</p></div>
-                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Target Sprint</p><p class="font-bold text-slate-600">${t.sprint}</p></div>
-                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Client Name</p><p class="font-bold text-slate-800">${t.client}</p></div>
-                    <div class="col-span-2"><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Delivery Deadline</p><p class="text-xl font-black text-slate-900">${t.dueDate ? t.dueDate.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric'}) : 'NOT SCHEDULED'}</p></div>
+                <div><h3 class="text-4xl font-black text-slate-900 leading-tight tracking-tighter">${t.name}</h3><div class="text-[12px] font-black text-purple-600 uppercase mt-4 tracking-[0.3em]">Requirement Reference</div></div>
+                <div class="grid grid-cols-2 gap-10 py-8 border-y border-slate-100 my-8">
+                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Workflow State</p><span class="st-badge st-${t.statusKey}">${t.status}</span></div>
+                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Resource Owner</p><p class="text-lg font-black text-slate-900 tracking-tight">${t.assignee}</p></div>
+                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Target Cycle</p><p class="text-lg font-bold text-slate-600 tracking-tight">${t.sprint}</p></div>
+                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Client Account</p><p class="text-lg font-black text-slate-900 tracking-tight">${t.client}</p></div>
+                    <div class="col-span-2"><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Planned Deadline</p><p class="text-2xl font-black text-slate-900 tracking-tighter">${t.dueDate ? t.dueDate.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric'}) : 'NOT SCHEDULED'}</p></div>
                 </div>
-                <div class="flex justify-between items-center pt-6"><div class="text-sm font-bold text-slate-400 uppercase">Effort: <span class="text-slate-800">${t.hours}h</span></div><a href="${t.url}" target="_blank" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase flex items-center gap-3 hover:bg-slate-800 transition-all shadow-xl">Open In ClickUp <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-width="2.5"></path></svg></a></div>`;
+                <div class="flex justify-between items-center pt-8">
+                    <div class="text-xs font-black text-slate-400 uppercase tracking-widest">Effort Score: <span class="text-slate-900 text-base ml-2">${t.hours}h</span></div>
+                    <a href="${t.url}" target="_blank" class="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black text-[12px] uppercase tracking-widest flex items-center gap-4 hover:bg-indigo-600 transition-all shadow-2xl active:scale-95">Open In ClickUp <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-width="3"></path></svg></a>
+                </div>`;
             document.getElementById('taskDetailModal').classList.add('show');
         }
 
@@ -487,8 +465,8 @@
             const devHrs = data.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + t.hours; return acc; }, {});
             const labels = Object.keys(devHrs);
             if(charts.plan) charts.plan.destroy();
-            charts.plan = new Chart(document.getElementById('chartCapacity'), { type: 'bar', data: { labels, datasets: [{ label: 'Used', data: Object.values(devHrs), backgroundColor: '#7c3aed', borderRadius: 10, barThickness: 30 }, { label: 'Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9', borderRadius: 10, barThickness: 30 }] }, options: { maintainAspectRatio: false, indexAxis: 'y', onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.plan.data.labels[i[0].index], 'assignee'); }, plugins: { datalabels: { display: false }, legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false }, ticks: { font: { weight: '800', size: 11 } } } } } });
-            document.getElementById('capacityList').innerHTML = labels.map(n => { const u = devHrs[n], p = Math.min((u/DEV_CAPACITY)*100, 100); return `<div class="space-y-2 p-2 rounded-xl hover:bg-white transition-colors"><div class="flex justify-between text-xs font-black uppercase tracking-widest"><span>${n}</span><span class="${u > DEV_CAPACITY ? 'text-red-600' : 'text-slate-600'}">${u.toFixed(1)}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${u > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${p}%"></div></div></div>`; }).join('');
+            charts.plan = new Chart(document.getElementById('chartCapacity'), { type: 'bar', data: { labels, datasets: [{ label: 'Used', data: Object.values(devHrs), backgroundColor: '#7c3aed', borderRadius: 12, barThickness: 32 }, { label: 'Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9', borderRadius: 12, barThickness: 32 }] }, options: { maintainAspectRatio: false, indexAxis: 'y', onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.plan.data.labels[i[0].index], 'assignee'); }, plugins: { datalabels: { display: false }, legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false }, ticks: { font: { weight: '800', size: 12 } } } } } });
+            document.getElementById('capacityList').innerHTML = labels.map(n => { const u = devHrs[n], p = Math.min((u/DEV_CAPACITY)*100, 100); return `<div class="space-y-3 p-3 rounded-2xl hover:bg-white transition-all"><div class="flex justify-between text-xs font-black uppercase tracking-widest"><span>${n}</span><span class="${u > DEV_CAPACITY ? 'text-red-600' : 'text-slate-600'}">${u.toFixed(1)}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${u > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${p}%"></div></div></div>`; }).join('');
         }
 
         function renderClientProgress(data) {
@@ -497,26 +475,26 @@
                 const ct = data.filter(t => t.client === c);
                 const done = ct.filter(t => t.isClosed).length;
                 const prog = ct.length > 0 ? Math.round((done / ct.length) * 100) : 0;
-                return `<div class="glass-card p-8 space-y-6 cursor-pointer-hover flex flex-col justify-between" onclick="openDrillDownPopup('${c.replace(/'/g, "\\'")}', 'client')"><div><div class="flex justify-between items-start mb-2"><h4 class="font-black text-slate-800 tracking-tight text-lg">${c}</h4><span class="text-2xl font-black text-purple-600">${prog}%</span></div><div class="progress-bar"><div class="progress-fill ${prog === 100 ? 'bg-emerald-500' : 'bg-purple-600'}" style="width: ${prog}%"></div></div></div><div class="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] border-t border-slate-50 pt-4"><div class="flex flex-col"><span class="text-slate-800 text-sm">${ct.length - done}</span><span>Pending</span></div><div class="flex flex-col text-right"><span class="text-slate-800 text-sm">${ct.length}</span><span>Total</span></div></div></div>`;
+                return `<div class="glass-card p-10 space-y-8 cursor-pointer-hover flex flex-col justify-between" onclick="openDrillDownPopup('${c.replace(/'/g, "\\'")}', 'client')"><div><div class="flex justify-between items-start mb-3"><h4 class="font-black text-slate-800 tracking-tighter text-xl">${c}</h4><span class="text-3xl font-black text-purple-600">${prog}%</span></div><div class="progress-bar"><div class="progress-fill ${prog === 100 ? 'bg-emerald-500' : 'bg-purple-600'}" style="width: ${prog}%"></div></div></div><div class="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest border-t border-slate-50 pt-6"><div class="flex flex-col"><span class="text-slate-900 text-lg">${ct.length - done}</span><span>Active</span></div><div class="flex flex-col text-right"><span class="text-slate-900 text-lg">${ct.length}</span><span>Volume</span></div></div></div>`;
             }).join('');
         }
 
         function renderUnassigned(data) {
             const f = data.filter(t => t.assignee === "Unassigned");
-            document.getElementById('unassignedCounter').innerText = f.length;
-            document.getElementById('unassignedTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-800 flex items-center gap-3"><div>${t.name}</div> <span class="bg-red-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black tracking-widest alert-pulse shadow-sm">ATTENTION</span></td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-8 py-6 font-black uppercase text-[10px] text-red-600 tracking-widest">${t.priority}</td></tr>`).join('') || '<tr><td class="p-20 text-center font-black text-slate-300">ALL TASKS ALLOCATED</td></tr>';
+            document.getElementById('unassignedCounter').innerText = `${f.length} items`;
+            document.getElementById('unassignedTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-10 py-8 font-black text-slate-800 flex items-center gap-4"><div>${t.name}</div> <span class="bg-red-600 text-white text-[9px] px-3 py-1 rounded-full font-black tracking-widest alert-pulse shadow-lg">ATTENTION</span></td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-10 py-8"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-10 py-8 font-black uppercase text-[10px] text-red-600 tracking-widest">${t.priority}</td></tr>`).join('') || '<tr><td class="p-24 text-center font-black text-slate-300 uppercase tracking-widest text-lg">Resource Allocation Optimized</td></tr>';
         }
 
         function renderNoDeadline(data) {
             const f = data.filter(t => !t.dueDate);
-            document.getElementById('noDeadlineCounter').innerText = f.length;
-            document.getElementById('noDeadlineTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-900">${t.name}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.assignee}</td></tr>`).join('') || '<tr><td class="p-20 text-center font-black text-slate-300">SCHEDULE COMPLETE</td></tr>';
+            document.getElementById('noDeadlineCounter').innerText = `${f.length} items`;
+            document.getElementById('noDeadlineTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-10 py-8 font-black text-slate-900 tracking-tight">${t.name}</td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-10 py-8"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.assignee}</td></tr>`).join('') || '<tr><td class="p-24 text-center font-black text-slate-300 uppercase tracking-widest text-lg">Calendar Fully Synchronized</td></tr>';
         }
 
         function renderBacklog(data) {
             const f = data.filter(t => t.sprint.toLowerCase().includes('backlog') || t.status.toLowerCase().includes('backlog'));
-            document.getElementById('backlogCounter').innerText = f.length;
-            document.getElementById('backlogTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-800">${t.name}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('') || '<tr><td class="p-20 text-center font-black text-slate-300">BACKLOG CLEAR</td></tr>';
+            document.getElementById('backlogCounter').innerText = `${f.length} items`;
+            document.getElementById('backlogTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-800">${t.name}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('') || '<tr><td class="p-24 text-center font-black text-slate-300 uppercase tracking-widest text-lg">Requirements Ready</td></tr>';
         }
 
         window.onload = () => fetchRealData(true);
