@@ -3,40 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClickUp Workspace Console</title>
+    <title>ClickUp Sprint & Support Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
         .tab-btn { border-bottom: 2px solid transparent; transition: all 0.2s; padding: 1.25rem 0.5rem; color: #64748b; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
         .tab-btn.active { border-bottom-color: #7c3aed; color: #7c3aed; font-weight: 700; }
-        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 0.75rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
-        .progress-bar { height: 8px; border-radius: 4px; background: #f1f5f9; overflow: hidden; }
-        .progress-fill { height: 100%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* Persistent Multi-select Dropdowns */
-        .filter-dropdown { position: relative; display: inline-block; }
-        .filter-content { 
-            display: none; 
-            position: absolute; 
-            background-color: white; 
-            min-width: 240px; 
-            box-shadow: 0px 10px 25px -5px rgba(0,0,0,0.1); 
-            z-index: 100; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 0.75rem;
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 12px;
-            margin-top: 4px;
-        }
-        .filter-content.show { display: block; }
-        .filter-item { display: flex; align-items: center; padding: 8px 10px; font-size: 0.8125rem; cursor: pointer; border-radius: 0.375rem; transition: background 0.2s; user-select: none; }
-        .filter-item:hover { background-color: #f8fafc; }
-        .filter-item input { margin-right: 12px; accent-color: #7c3aed; width: 16px; height: 16px; pointer-events: none; }
+        /* Modal Popup Styles */
+        #taskModal { display: none; }
+        #taskModal.show { display: flex; }
         
-        .status-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
+        /* Status Badge Logic */
+        .st-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
         .st-todo { background: #f1f5f9; color: #64748b; }
         .st-inprogress { background: #dbeafe; color: #2563eb; }
         .st-test, .st-trial { background: #f3e8ff; color: #9333ea; }
@@ -45,12 +27,41 @@
         .st-kiv { background: #fef2f2; color: #dc2626; }
         .st-rework { background: #fffbeb; color: #d97706; }
 
-        .task-link { color: #1e293b; font-weight: 500; transition: color 0.2s; }
+        .task-link { transition: color 0.2s; font-weight: 500; }
         .task-link:hover { color: #7c3aed; text-decoration: underline; }
     </style>
 </head>
 <body class="antialiased">
 
+    <!-- TASK LIST POPUP (MODAL) -->
+    <div id="taskModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] items-center justify-center p-4">
+        <div class="glass-card w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-extrabold text-slate-800" id="modalTitle">Tasks</h2>
+                    <span id="modalCounter" class="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">0</span>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </button>
+            </div>
+            <div class="overflow-y-auto bg-slate-50/30">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead class="bg-white text-slate-500 sticky top-0 z-10 border-b">
+                        <tr>
+                            <th class="px-6 py-4 font-bold uppercase tracking-wider">Task</th>
+                            <th class="px-6 py-4 font-bold uppercase tracking-wider">Client</th>
+                            <th class="px-6 py-4 font-bold uppercase tracking-wider">List/Sprint</th>
+                            <th class="px-6 py-4 font-bold uppercase tracking-wider">Assignee</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -58,8 +69,8 @@
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path></svg>
                 </div>
                 <div>
-                    <h1 class="text-lg font-bold">Workspace Insights</h1>
-                    <p id="syncStatus" class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Awaiting Sync</p>
+                    <h1 class="text-lg font-bold">Workspace Console</h1>
+                    <p id="syncStatus" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Awaiting Sync</p>
                 </div>
             </div>
             <nav class="flex gap-8">
@@ -67,7 +78,7 @@
                 <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn">Planning</div>
                 <div onclick="switchTab('client')" id="btn-client" class="tab-btn">Client Progress</div>
             </nav>
-            <button onclick="fetchRealData()" class="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-bold">Sync Now</button>
+            <button onclick="fetchRealData()" class="bg-slate-900 text-white text-xs px-5 py-2.5 rounded-lg font-bold hover:bg-slate-800 transition-all">Sync Now</button>
         </div>
     </header>
 
@@ -77,195 +88,194 @@
         </div>
 
         <section id="view-mgmt" class="tab-content space-y-6">
-            <!-- ROBUST MULTI-SELECT FILTERS -->
-            <div class="glass-card p-4 flex flex-wrap gap-3 items-center bg-slate-50/50">
-                <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Search tasks..." class="flex-1 min-w-[200px] px-4 py-2 text-sm bg-white shadow-sm border">
-                
-                <div class="filter-dropdown">
-                    <button onclick="toggleDropdown(event, 'filterClientContent')" class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[150px] text-left flex justify-between items-center">
-                        <span id="labelClient">All Clients</span>
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2"></path></svg>
-                    </button>
-                    <div id="filterClientContent" class="filter-content" onclick="event.stopPropagation()"></div>
-                </div>
-
-                <div class="filter-dropdown">
-                    <button onclick="toggleDropdown(event, 'filterAssigneeContent')" class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[150px] text-left flex justify-between items-center">
-                        <span id="labelAssignee">All Assignees</span>
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2"></path></svg>
-                    </button>
-                    <div id="filterAssigneeContent" class="filter-content" onclick="event.stopPropagation()"></div>
-                </div>
-
-                <div class="filter-dropdown">
-                    <button onclick="toggleDropdown(event, 'filterSprintContent')" class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[150px] text-left flex justify-between items-center">
-                        <span id="labelSprint">All Sprints</span>
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2"></path></svg>
-                    </button>
-                    <div id="filterSprintContent" class="filter-content" onclick="event.stopPropagation()"></div>
-                </div>
-
-                <div class="filter-dropdown">
-                    <button onclick="toggleDropdown(event, 'filterStatusContent')" class="bg-white border px-4 py-2 rounded-lg text-sm shadow-sm min-w-[150px] text-left flex justify-between items-center">
-                        <span id="labelStatus">All Statuses</span>
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2"></path></svg>
-                    </button>
-                    <div id="filterStatusContent" class="filter-content" onclick="event.stopPropagation()"></div>
-                </div>
-
-                <button onclick="resetFilters()" class="text-xs font-bold text-slate-400 hover:text-purple-600 uppercase ml-2">Reset</button>
-            </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-card p-6 h-80"><canvas id="chartStatus"></canvas></div>
-                <div class="glass-card p-6 h-80"><canvas id="chartAssignee"></canvas></div>
+                <!-- CHART 1 -->
+                <div class="glass-card p-6 h-96 relative">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Task Status Distribution <span class="text-[10px] lowercase font-normal">(Click segment for details)</span></h3>
+                    <div class="h-64"><canvas id="chartStatus"></canvas></div>
+                </div>
+                <!-- CHART 2 -->
+                <div class="glass-card p-6 h-96 relative">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-4">Developer Workload <span class="text-[10px] lowercase font-normal">(Click bar for details)</span></h3>
+                    <div class="h-64"><canvas id="chartAssignee"></canvas></div>
+                </div>
             </div>
 
+            <!-- MAIN TABLE -->
             <div class="glass-card overflow-hidden">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-500 font-semibold border-b">
-                        <tr>
-                            <th class="px-6 py-4">Task Name (Click to Open)</th>
-                            <th class="px-6 py-4">Sprint</th>
-                            <th class="px-6 py-4">Client</th>
-                            <th class="px-6 py-4">Status</th>
-                            <th class="px-6 py-4">Assignee</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mgmtTable" class="divide-y divide-slate-100 bg-white"></tbody>
-                </table>
+                <div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center">
+                    <h3 class="text-xs font-bold uppercase text-slate-400">Task Overview</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 font-semibold border-b">
+                            <tr>
+                                <th class="px-6 py-4">Task Name</th>
+                                <th class="px-6 py-4">Category</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Sprint</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mgmtTable" class="divide-y divide-slate-100 bg-white"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
-        <!-- Planning and Client tabs are updated automatically via the render logic below -->
-        <section id="view-plan" class="tab-content hidden space-y-6">
-            <div id="planSummary" class="grid grid-cols-1 md:grid-cols-4 gap-6"></div>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 glass-card p-6 h-96"><canvas id="chartCapacity"></canvas></div>
-                <div class="glass-card p-6 space-y-6" id="capacityList"></div>
-            </div>
-        </section>
-
-        <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-6" id="clientGrid"></section>
+        <!-- Other Sections (Placeholders) -->
+        <section id="view-plan" class="tab-content hidden space-y-6"><div class="p-10 text-center glass-card">Planning View Data (Load Required)</div></section>
+        <section id="view-client" class="tab-content hidden space-y-6"><div class="p-10 text-center glass-card">Client Progress View (Load Required)</div></section>
     </main>
 
     <script>
-        const WORKER_URL = "https://dashboard.fatin-rasyidah.workers.dev/";
-        const DEV_CAPACITY = 32;
         let tasks = [];
         let charts = {};
         let currentTab = 'mgmt';
 
-        let activeFilters = { clients: [], assignees: [], statuses: [], sprints: [] };
-
-        // Robust Dropdown Logic
-        function toggleDropdown(event, id) {
-            event.stopPropagation();
-            const content = document.getElementById(id);
-            const isShown = content.classList.contains('show');
-            document.querySelectorAll('.filter-content').forEach(el => el.classList.remove('show'));
-            if (!isShown) content.classList.add('show');
-        }
-
-        window.addEventListener('click', () => {
-            document.querySelectorAll('.filter-content').forEach(el => el.classList.remove('show'));
-        });
-
+        /**
+         * 1. DATA FETCHING & MAPPING
+         * Using the logic provided in fetch_logic.js
+         */
         async function fetchRealData() {
             document.getElementById('loadingOverlay').classList.remove('hidden');
+            const API_URL = "https://dashboard.fatin-rasyidah.workers.dev/"; 
+            
             try {
-                const response = await fetch(WORKER_URL);
-                const data = await response.json();
-
-                tasks = data.tasks.map(t => {
-                    // Resolve Client Name from ID
+                const response = await fetch(API_URL);
+                const json = await response.json();
+                
+                tasks = json.tasks.map(t => {
+                    // Resolve Client Name
                     const clientField = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
                     let clientName = "Internal";
-                    if (clientField?.value !== undefined) {
-                        if (clientField.type_config?.options) {
-                            const opt = clientField.type_config.options.find(o => String(o.id) === String(clientField.value) || String(o.orderindex) === String(clientField.value));
-                            clientName = opt ? (opt.label || opt.name) : clientField.value;
-                        } else {
-                            clientName = clientField.value;
-                        }
+                    if (clientField?.value !== undefined && clientField.type_config?.options) {
+                        const opt = clientField.type_config.options.find(o => String(o.id) === String(clientField.value) || String(o.orderindex) === String(clientField.value));
+                        clientName = opt ? (opt.label || opt.name) : clientField.value;
                     }
 
-                    // Resolve Progress Status (CRITICAL FIX)
-                    const statusName = (t.status?.status || "todo").toLowerCase().trim();
-                    const isFinished = (statusName === 'deployed' || statusName === 'closed' || t.status?.type === 'closed');
+                    // Identify Category
+                    const listName = t.list?.name || "Unlisted";
+                    const isSupport = listName.toLowerCase().includes('support') || listName.toLowerCase().includes('escalation');
+                    const category = isSupport ? "Support Escalation" : "Development Sprint";
+
+                    // Resolve Hours
+                    let hours = t.time_estimate ? Math.round(t.time_estimate / 3600000 * 10) / 10 : 0;
+                    if (hours === 0) {
+                        const hf = t.custom_fields?.find(f => f.name.toLowerCase().includes('hour'));
+                        hours = parseFloat(hf?.value) || 0;
+                    }
+
+                    // Status Logic
+                    const rawStatus = t.status?.status || "todo";
+                    const statusKey = rawStatus.toLowerCase().replace(/\s/g, '');
 
                     return {
                         id: t.id,
-                        name: t.name || "Untitled",
+                        name: t.name,
                         url: t.url,
-                        sprint: t.list?.name || "Global",
                         client: clientName,
                         assignee: t.assignees?.[0]?.username || "Unassigned",
-                        status: t.status?.status || "Todo",
-                        statusKey: statusName.replace(/\s/g, ''),
-                        isClosed: isFinished,
-                        hours: t.time_estimate ? Math.round(t.time_estimate / 3600000 * 10) / 10 : 0
+                        status: t.status.status,
+                        statusKey: statusKey,
+                        sprint: listName,
+                        category: category,
+                        hours: hours
                     };
                 });
 
-                document.getElementById('syncStatus').innerText = `Sync: ${new Date().toLocaleTimeString()} (${tasks.length} items from last 1 year)`;
-                populateFilters();
-                renderView(currentTab);
-            } catch (err) {
-                console.error(err);
+                document.getElementById('syncStatus').innerText = `Synced: ${new Date().toLocaleTimeString()} (${tasks.length} items)`;
+                renderView('mgmt'); 
+            } catch (error) {
+                console.error("Sync Error:", error);
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }
         }
 
-        function populateFilters() {
-            const data = {
-                filterClientContent: { items: [...new Set(tasks.map(t => t.client))].sort(), key: 'clients', label: 'labelClient', title: 'Clients' },
-                filterAssigneeContent: { items: [...new Set(tasks.map(t => t.assignee))].sort(), key: 'assignees', label: 'labelAssignee', title: 'Assignees' },
-                filterSprintContent: { items: [...new Set(tasks.map(t => t.sprint))].sort(), key: 'sprints', label: 'labelSprint', title: 'Sprints' },
-                filterStatusContent: { items: [...new Set(tasks.map(t => t.status))].sort(), key: 'statuses', label: 'labelStatus', title: 'Statuses' }
-            };
+        /**
+         * 2. CHART RENDERING WITH CLICK INTERACTION
+         */
+        function renderCharts() {
+            const statusMap = tasks.reduce((a, t) => { a[t.status] = (a[t.status]||0)+1; return a; }, {});
+            const devMap = tasks.reduce((a, t) => { a[t.assignee] = (a[t.assignee]||0)+1; return a; }, {});
 
-            Object.keys(data).forEach(id => {
-                const config = data[id];
-                const container = document.getElementById(id);
-                container.innerHTML = config.items.map(item => `
-                    <div class="filter-item" onclick="toggleSelection(event, '${config.key}', '${item.replace(/'/g, "\\'")}', '${config.label}', '${config.title}')">
-                        <input type="checkbox" ${activeFilters[config.key].includes(item) ? 'checked' : ''}>
-                        <span>${item}</span>
-                    </div>
-                `).join('');
+            // Status Doughnut
+            if(charts.status) charts.status.destroy();
+            charts.status = new Chart(document.getElementById('chartStatus'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusMap),
+                    datasets: [{
+                        data: Object.values(statusMap),
+                        backgroundColor: ['#10b981','#7c3aed','#f59e0b','#3b82f6','#ef4444','#94a3b8','#ec4899','#14b8a6']
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    onClick: (evt, item) => {
+                        if (item.length > 0) {
+                            const index = item[0].index;
+                            const label = charts.status.data.labels[index];
+                            showPopup(label, 'status');
+                        }
+                    },
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+                }
+            });
+
+            // Assignee Bar Chart
+            if(charts.dev) charts.dev.destroy();
+            charts.dev = new Chart(document.getElementById('chartAssignee'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(devMap),
+                    datasets: [{ label: 'Tasks', data: Object.values(devMap), backgroundColor: '#7c3aed', borderRadius: 6 }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    onClick: (evt, item) => {
+                        if (item.length > 0) {
+                            const index = item[0].index;
+                            const label = charts.dev.data.labels[index];
+                            showPopup(label, 'assignee');
+                        }
+                    },
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { display: false } } }
+                }
             });
         }
 
-        function toggleSelection(event, key, val, labelId, title) {
-            event.stopPropagation();
-            const idx = activeFilters[key].indexOf(val);
-            if (idx === -1) activeFilters[key].push(val);
-            else activeFilters[key].splice(idx, 1);
-
-            const label = document.getElementById(labelId);
-            label.innerText = activeFilters[key].length === 0 ? `All ${title}` : (activeFilters[key].length === 1 ? activeFilters[key][0] : `${activeFilters[key].length} selected`);
+        /**
+         * 3. POPUP MODAL LOGIC
+         */
+        function showPopup(filterValue, type) {
+            const filtered = tasks.filter(t => (type === 'status' ? t.status === filterValue : t.assignee === filterValue));
             
-            // Re-sync checkboxes in this specific menu
-            const menu = event.currentTarget.parentElement;
-            menu.querySelectorAll('input').forEach((input, i) => {
-                const itemVal = menu.querySelectorAll('span')[i].innerText;
-                input.checked = activeFilters[key].includes(itemVal);
-            });
+            document.getElementById('modalTitle').innerText = `${filterValue}`;
+            document.getElementById('modalCounter').innerText = filtered.length;
+            
+            document.getElementById('modalTableBody').innerHTML = filtered.map(t => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <a href="${t.url}" target="_blank" class="task-link text-slate-900">${t.name}</a>
+                        <div class="text-[10px] text-slate-400 uppercase mt-1 font-bold">${t.category}</div>
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 font-medium">${t.client}</td>
+                    <td class="px-6 py-4 text-slate-500">${t.sprint}</td>
+                    <td class="px-6 py-4 text-slate-500 font-medium">${t.assignee}</td>
+                </tr>
+            `).join('');
 
-            renderView(currentTab);
+            document.getElementById('taskModal').classList.add('show');
         }
 
-        function resetFilters() {
-            document.getElementById('mgmtSearch').value = "";
-            activeFilters = { clients: [], assignees: [], statuses: [], sprints: [] };
-            populateFilters();
-            ['labelClient', 'labelAssignee', 'labelSprint', 'labelStatus'].forEach(id => {
-                document.getElementById(id).innerText = `All ${id.replace('label', '')}s`;
-            });
-            renderView(currentTab);
+        function closeModal() {
+            document.getElementById('taskModal').classList.remove('show');
         }
+
+        // Close on clicking backdrop
+        window.onclick = (e) => { if(e.target === document.getElementById('taskModal')) closeModal(); };
 
         function switchTab(tabId) {
             currentTab = tabId;
@@ -277,70 +287,17 @@
         }
 
         function renderView(view) {
-            const search = document.getElementById('mgmtSearch').value.toLowerCase();
-            const filtered = tasks.filter(t => 
-                (activeFilters.clients.length === 0 || activeFilters.clients.includes(t.client)) &&
-                (activeFilters.assignees.length === 0 || activeFilters.assignees.includes(t.assignee)) &&
-                (activeFilters.sprints.length === 0 || activeFilters.sprints.includes(t.sprint)) &&
-                (activeFilters.statuses.length === 0 || activeFilters.statuses.includes(t.status)) &&
-                (t.name.toLowerCase().includes(search))
-            );
-
             if (view === 'mgmt') {
-                document.getElementById('mgmtTable').innerHTML = filtered.map(t => `
+                document.getElementById('mgmtTable').innerHTML = tasks.map(t => `
                     <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-6 py-4 font-medium"><a href="${t.url}" target="_blank" class="task-link">${t.name}</a></td>
+                        <td class="px-6 py-4 font-medium"><a href="${t.url}" target="_blank" class="task-link text-slate-900">${t.name}</a></td>
+                        <td class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase">${t.category}</td>
+                        <td class="px-6 py-4"><span class="st-badge st-${t.statusKey}">${t.status}</span></td>
                         <td class="px-6 py-4 text-slate-500">${t.sprint}</td>
-                        <td class="px-6 py-4 text-slate-500">${t.client}</td>
-                        <td class="px-6 py-4"><span class="status-badge st-${t.statusKey}">${t.status}</span></td>
-                        <td class="px-6 py-4 text-slate-500">${t.assignee}</td>
                     </tr>
-                `).join('') || '<tr><td colspan="5" class="p-10 text-center text-slate-400">No tasks found.</td></tr>';
-                updateMgmtCharts(filtered);
-            } else if (view === 'plan') {
-                renderPlanning(filtered);
-            } else if (view === 'client') {
-                renderClientGrid(filtered);
+                `).join('');
+                renderCharts();
             }
-        }
-
-        function updateMgmtCharts(data) {
-            const sMap = data.reduce((a, t) => { a[t.status] = (a[t.status]||0)+1; return a; }, {});
-            const dMap = data.reduce((a, t) => { a[t.assignee] = (a[t.assignee]||0)+1; return a; }, {});
-            if(charts.s) charts.s.destroy();
-            charts.s = new Chart(document.getElementById('chartStatus'), { type: 'doughnut', data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: ['#7c3aed','#10b981','#f59e0b','#3b82f6','#ef4444'] }] }, options: { maintainAspectRatio: false } });
-            if(charts.d) charts.d.destroy();
-            charts.d = new Chart(document.getElementById('chartAssignee'), { type: 'bar', data: { labels: Object.keys(dMap), datasets: [{ label: 'Tasks', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 4 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-        }
-
-        function renderPlanning(data) {
-            const total = data.reduce((s, t) => s + t.hours, 0);
-            document.getElementById('planSummary').innerHTML = `
-                <div class="glass-card p-6 flex flex-col items-center">
-                    <h3 class="text-[10px] font-bold text-slate-400 uppercase">Selected Total Hours</h3>
-                    <div class="text-4xl font-black">${total.toFixed(1)}h</div>
-                </div>
-            `;
-
-            const devHours = data.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + t.hours; return acc; }, {});
-            const labels = Object.keys(devHours);
-            if(charts.c) charts.c.destroy();
-            charts.c = new Chart(document.getElementById('chartCapacity'), { type: 'bar', data: { labels, datasets: [{ label: 'Used', data: Object.values(devHours), backgroundColor: '#7c3aed', borderRadius: 4 }, { label: 'Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9' }] }, options: { maintainAspectRatio: false, indexAxis: 'y' } });
-
-            document.getElementById('capacityList').innerHTML = labels.map(n => {
-                const u = devHours[n], p = Math.min((u/DEV_CAPACITY)*100, 100);
-                return `<div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>${n}</span><span>${u.toFixed(1)}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${u > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${p}%"></div></div></div>`;
-            }).join('');
-        }
-
-        function renderClientGrid(data) {
-            const clients = [...new Set(data.map(t => t.client))];
-            document.getElementById('view-client').innerHTML = clients.map(c => {
-                const ct = data.filter(t => t.client === c);
-                const done = ct.filter(t => t.isClosed).length;
-                const prog = ct.length > 0 ? Math.round((done / ct.length) * 100) : 0;
-                return `<div class="glass-card p-6 space-y-4"><div class="flex justify-between items-center"><h4 class="font-bold">${c}</h4><span class="text-xl font-black text-purple-600">${prog}%</span></div><div class="progress-bar"><div class="progress-fill ${prog === 100 ? 'bg-emerald-500' : 'bg-purple-600'}" style="width: ${prog}%"></div></div><div class="flex justify-between text-[10px] font-bold text-slate-400"><span>TOTAL: ${ct.length}</span><span>DONE: ${done}</span></div></div>`;
-            }).join('');
         }
 
         window.onload = fetchRealData;
