@@ -8,75 +8,23 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     
-    <!-- Firebase for PM Agreement Storage -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        window.db = null;
-        window.pmDeadlines = {};
-        
-        window.getClientDocId = (name) => {
-            return (name || "Unknown").trim().toLowerCase().replace(/[^a-z0-9]/g, '-');
-        };
-
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        window.db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'clickup-pm-console-v2';
-
-        const initAuth = async () => {
-            await signInAnonymously(auth);
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    const colRef = collection(window.db, 'artifacts', appId, 'public', 'data', 'clientAgreements');
-                    onSnapshot(colRef, (snapshot) => {
-                        snapshot.forEach(doc => {
-                            window.pmDeadlines[doc.id] = doc.data().agreementDate;
-                        });
-                        if (window.tasks && window.tasks.length > 0) {
-                            refreshActiveTab();
-                        }
-                    }, (err) => console.error("Sync Error:", err));
-                }
-            });
-        };
-        initAuth();
-
-        window.saveAgreementDate = async (clientName, dateValue) => {
-            if (!window.db) return;
-            const docId = window.getClientDocId(clientName);
-            try {
-                await setDoc(doc(window.db, 'artifacts', appId, 'public', 'data', 'clientAgreements', docId), {
-                    agreementDate: dateValue,
-                    client: clientName,
-                    updatedAt: new Date().toISOString()
-                });
-            } catch (e) { console.error("Save failed:", e); }
-        };
-
-        function refreshActiveTab() {
-            if (window.currentTab === 'client') renderClientProgress(window.currentFilteredTasks || window.tasks);
-        }
-    </script>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
-        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }
-        .tab-btn { border-bottom: 2px solid transparent; transition: all 0.2s; padding: 1.25rem 0.5rem; color: #64748b; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.025em; }
-        .tab-btn.active { border-bottom-color: #7c3aed; color: #7c3aed; font-weight: 800; }
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
-        .modal-overlay.show { display: flex; }
-        .filter-content { display: none; position: absolute; background: white; min-width: 240px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 50; border: 1px solid #e2e8f0; border-radius: 0.75rem; max-height: 350px; overflow-y: auto; padding: 10px; margin-top: 5px; }
-        .filter-content.show { display: block; }
-        .filter-item { display: flex; align-items: center; padding: 8px; font-size: 0.8125rem; cursor: pointer; border-radius: 0.375rem; transition: background 0.2s; user-select: none; }
-        .filter-item:hover { background: #f8fafc; }
-        .filter-item input { margin-right: 10px; accent-color: #7c3aed; width: 16px; height: 16px; pointer-events: none; }
+        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: all 0.2s ease; }
+        .glass-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
-        .st-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 10px; border-radius: 6px; display: inline-block; white-space: nowrap; }
+        .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; padding: 1rem 0.75rem; color: #94a3b8; font-size: 0.75rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; }
+        .tab-btn.active { border-bottom-color: #7c3aed; color: #7c3aed; }
+        
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+        .modal-overlay.show { display: flex; }
+        
+        .filter-content { display: none; position: absolute; background: white; min-width: 260px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); z-index: 50; border: 1px solid #e2e8f0; border-radius: 0.75rem; max-height: 400px; overflow-y: auto; padding: 12px; margin-top: 8px; }
+        .filter-content.show { display: block; animation: slideDown 0.2s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .st-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 12px; border-radius: 8px; display: inline-block; white-space: nowrap; letter-spacing: 0.025em; }
         .st-deployed { background: #00A884; color: white; }
         .st-pendingdeployment, .st-pendingdeployement { background: #D33131; color: white; }
         .st-test { background: #00B8D9; color: white; }
@@ -86,120 +34,148 @@
         .st-kiv { background: #FF7A00; color: white; }
         .st-todo { background: #D9D9D9; color: #475569; }
         .st-closed { background: #2ecc71; color: white; }
-        .st-default { background: #f1f5f9; color: #64748b; }
         
-        .progress-bar { height: 8px; border-radius: 4px; background: #f1f5f9; overflow: hidden; }
-        .progress-fill { height: 100%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-        .cursor-pointer-hover:hover { cursor: pointer; border-color: #7c3aed; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .progress-bar { height: 10px; border-radius: 5px; background: #f1f5f9; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
-        @keyframes pulse-red { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .alert-pulse { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.95); } }
+        .alert-pulse { animation: pulse-red 1.5s infinite; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
     </style>
 </head>
 <body class="antialiased">
 
-    <!-- DRILL-DOWN POPUP -->
+    <!-- DRILL-DOWN POPUP (SPLIT VIEW) -->
     <div id="taskListModal" class="modal-overlay" onclick="closeAllModals(event)">
-        <div class="glass-card w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
-                <div class="flex items-center gap-3">
-                    <h2 class="text-xl font-extrabold text-slate-800" id="listModalTitle">Details</h2>
-                    <span id="listModalCounter" class="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-1 rounded-full">0</span>
+        <div class="glass-card w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border-none" onclick="event.stopPropagation()">
+            <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight" id="listModalTitle">Context Details</h2>
+                    <span id="listModalCounter" class="text-sm font-black bg-purple-100 text-purple-700 px-4 py-1.5 rounded-full shadow-inner">0</span>
                 </div>
-                <button onclick="closeModal('taskListModal')" class="text-slate-400 hover:text-slate-600 p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2"></path></svg></button>
+                <button onclick="closeModal('taskListModal')" class="text-slate-300 hover:text-slate-600 p-2 transition-colors duration-200"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"></path></svg></button>
             </div>
             <div class="flex-1 flex overflow-hidden">
-                <div class="w-1/3 border-r border-slate-100 bg-slate-50/20 p-6 flex flex-col">
-                    <h3 id="modalChartLabel" class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest text-center">Status Mix</h3>
-                    <div class="flex-1 relative min-h-[300px]"><canvas id="modalChart"></canvas></div>
+                <!-- LHS: The interactive chart -->
+                <div class="w-1/3 border-r border-slate-100 bg-slate-50/40 p-8 flex flex-col items-center">
+                    <h3 id="modalChartLabel" class="text-[10px] font-black text-slate-400 uppercase mb-8 tracking-[0.2em]">Filter List by Status</h3>
+                    <div class="w-full flex-1 relative min-h-[300px]"><canvas id="modalChart"></canvas></div>
+                    <p class="text-[11px] text-slate-400 mt-8 text-center font-semibold italic">Click segments to refresh data table</p>
                 </div>
+                <!-- RHS: The dynamic task table -->
                 <div class="w-2/3 flex flex-col bg-white overflow-y-auto">
                     <table class="w-full text-left text-sm">
-                        <thead class="bg-white text-slate-500 sticky top-0 z-10 border-b">
-                            <tr><th class="px-6 py-4 font-bold uppercase tracking-wider">Task</th><th class="px-6 py-4 font-bold uppercase tracking-wider">Sprint</th><th class="px-6 py-4 font-bold uppercase tracking-wider" id="listModalCol3">Info</th></tr>
+                        <thead class="bg-white text-slate-400 sticky top-0 z-10 border-b border-slate-50">
+                            <tr><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Task</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Sprint</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]" id="listModalCol3">Info</th></tr>
                         </thead>
-                        <tbody id="listModalTableBody" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="listModalTableBody" class="divide-y divide-slate-50"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- DETAIL MODAL -->
+    <!-- TASK DETAIL POPUP -->
     <div id="taskDetailModal" class="modal-overlay" onclick="closeAllModals(event)">
-        <div class="glass-card w-full max-w-2xl overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
-                <h2 class="text-lg font-bold text-slate-800">Task Overview</h2>
-                <button onclick="closeModal('taskDetailModal')" class="text-slate-400 hover:text-slate-600 p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2"></path></svg></button>
+        <div class="glass-card w-full max-w-2xl overflow-hidden shadow-2xl border-none" onclick="event.stopPropagation()">
+            <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+                <h2 class="text-lg font-black text-slate-800 tracking-tight">Requirement Details</h2>
+                <button onclick="closeModal('taskDetailModal')" class="text-slate-300 hover:text-slate-600 p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5"></path></svg></button>
             </div>
-            <div class="p-8 space-y-6 bg-white" id="detailContent"></div>
+            <div class="p-10 space-y-8 bg-white" id="detailContent"></div>
         </div>
     </div>
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-[1600px] mx-auto px-4 h-16 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg"><svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" stroke-width="2"></path></svg></div>
-                <div><h1 class="text-lg font-bold">Live Console</h1><p id="syncStatus" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Awaiting Sync</p></div>
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-[1600px] mx-auto px-6 h-20 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gradient-to-tr from-purple-700 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-purple-200">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" stroke-width="2"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Project Engine</h1>
+                    <div class="flex items-center gap-2">
+                        <p id="syncStatus" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Idle</p>
+                        <span id="autoSyncLabel" class="text-[10px] text-purple-500 font-black uppercase tracking-widest hidden flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span>
+                            Live Sync in: <span id="nextSyncTimer">5:00</span>
+                        </span>
+                    </div>
+                </div>
             </div>
-            <nav class="flex gap-4">
-                <div onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active">Management</div>
-                <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn">Planning</div>
-                <div onclick="switchTab('client')" id="btn-client" class="tab-btn">Client Progress</div>
-                <div onclick="switchTab('unassigned')" id="btn-unassigned" class="tab-btn">Unassigned</div>
-                <div onclick="switchTab('no-deadline')" id="btn-no-deadline" class="tab-btn">No Deadline</div>
-                <div onclick="switchTab('backlog')" id="btn-backlog" class="tab-btn">Backlog</div>
+            <nav class="flex bg-slate-100 p-1.5 rounded-2xl">
+                <div onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active px-5 rounded-xl">Management</div>
+                <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn px-5 rounded-xl">Planning</div>
+                <div onclick="switchTab('client')" id="btn-client" class="tab-btn px-5 rounded-xl">Client</div>
+                <div onclick="switchTab('unassigned')" id="btn-unassigned" class="tab-btn px-5 rounded-xl">Attention</div>
+                <div onclick="switchTab('no-deadline')" id="btn-no-deadline" class="tab-btn px-5 rounded-xl">Deadlines</div>
+                <div onclick="switchTab('backlog')" id="btn-backlog" class="tab-btn px-5 rounded-xl">Requirements</div>
             </nav>
-            <button onclick="fetchRealData()" class="bg-slate-900 text-white text-xs px-5 py-2.5 rounded-lg font-bold hover:bg-slate-800 transition-all">Sync Now</button>
+            <button onclick="fetchRealData(true)" class="bg-slate-900 text-white text-[11px] px-6 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95">Refresh Data</button>
         </div>
     </header>
 
-    <main class="max-w-[1600px] mx-auto px-4 py-8">
-        <div id="loadingOverlay" class="fixed inset-0 bg-white/60 backdrop-blur-sm z-[60] flex items-center justify-center hidden"><div class="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div></div>
-
-        <!-- MANAGEMENT VIEW -->
-        <section id="view-mgmt" class="tab-content space-y-6">
-            <div class="glass-card p-4 flex flex-wrap gap-3 items-center bg-slate-50/50">
-                <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Search tasks..." class="flex-1 min-w-[200px] px-4 py-2 text-sm bg-white border rounded-lg outline-none">
-                <div class="filter-dropdown"><button onclick="toggleFilterMenu(event, 'filterClientContent')" class="bg-white border px-4 py-2 rounded-lg text-sm min-w-[150px] text-left flex justify-between items-center"><span id="labelClient">All Clients</span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button><div id="filterClientContent" class="filter-content" onclick="event.stopPropagation()"></div></div>
-                <div class="filter-dropdown"><button onclick="toggleFilterMenu(event, 'filterAssigneeContent')" class="bg-white border px-4 py-2 rounded-lg text-sm min-w-[150px] text-left flex justify-between items-center"><span id="labelAssignee">All Assignees</span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button><div id="filterAssigneeContent" class="filter-content" onclick="event.stopPropagation()"></div></div>
-                <div class="filter-dropdown"><button onclick="toggleFilterMenu(event, 'filterSprintContent')" class="bg-white border px-4 py-2 rounded-lg text-sm min-w-[150px] text-left flex justify-between items-center"><span id="labelSprint">All Sprints</span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button><div id="filterSprintContent" class="filter-content" onclick="event.stopPropagation()"></div></div>
-                <div class="filter-dropdown"><button onclick="toggleFilterMenu(event, 'filterStatusContent')" class="bg-white border px-4 py-2 rounded-lg text-sm min-w-[150px] text-left flex justify-between items-center"><span id="labelStatus">All Statuses</span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button><div id="filterStatusContent" class="filter-content" onclick="event.stopPropagation()"></div></div>
-                <button onclick="resetFilters()" class="text-xs font-bold text-slate-400 hover:text-purple-600 uppercase ml-2">Reset</button>
+    <main class="max-w-[1600px] mx-auto px-6 py-10">
+        <div id="loadingOverlay" class="fixed inset-0 bg-white/60 backdrop-blur-sm z-[60] flex items-center justify-center hidden">
+            <div class="flex flex-col items-center gap-4">
+                <div class="w-14 h-14 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-xs font-black text-slate-800 uppercase tracking-[0.3em]">Refreshing Console...</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-card p-6 h-96 relative"><h3 class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest">Status Distribution</h3><div class="h-64"><canvas id="chartStatus"></canvas></div></div>
-                <div class="glass-card p-6 h-96 relative"><h3 class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest">Dev Workload</h3><div class="h-64"><canvas id="chartAssignee"></canvas></div></div>
+        </div>
+
+        <!-- VIEWS -->
+        <section id="view-mgmt" class="tab-content space-y-8">
+            <div class="glass-card p-5 flex flex-wrap gap-4 items-center bg-white/50">
+                <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Quick search..." class="flex-1 min-w-[280px] px-5 py-3 text-sm bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-purple-200 outline-none transition-all font-medium">
+                <div class="flex gap-3">
+                    <div class="filter-dropdown"><button onclick="toggleFilterMenu(event, 'filterClientContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50"><span id="labelClient">All Clients</span><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button><div id="filterClientContent" class="filter-content" onclick="event.stopPropagation()"></div></div>
+                    <div class="filter-dropdown"><button onclick="toggleFilterMenu(event, 'filterAssigneeContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-xs font-bold min-w-[160px] text-left flex justify-between items-center hover:bg-slate-50"><span id="labelAssignee">All Assignees</span><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg></button><div id="filterAssigneeContent" class="filter-content" onclick="event.stopPropagation()"></div></div>
+                </div>
+                <button onclick="resetFilters()" class="text-xs font-black text-slate-400 hover:text-purple-600 uppercase tracking-widest px-4">Reset</button>
             </div>
-            <div class="glass-card overflow-hidden"><div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-bold uppercase text-slate-400">Inventory</h3><span id="taskCounter" class="text-xs font-bold bg-slate-100 px-3 py-1 rounded-full">0</span></div><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-slate-500 font-semibold border-b"><tr><th class="px-6 py-4">Task Name</th><th class="px-6 py-4">Status</th><th class="px-6 py-4">Sprint</th><th class="px-6 py-4">Assignee</th></tr></thead><tbody id="mgmtTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div>
-        </section>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-card p-8 h-[450px] relative flex flex-col">
+                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em] text-center">Sprint Health Distribution</h3>
+                    <div class="flex-1 relative"><canvas id="chartStatus"></canvas></div>
+                </div>
+                <div class="glass-card p-8 h-[450px] relative flex flex-col">
+                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em] text-center">Team Workload Allocation</h3>
+                    <div class="flex-1 relative"><canvas id="chartAssignee"></canvas></div>
+                </div>
+            </div>
 
-        <!-- PLANNING VIEW -->
-        <section id="view-plan" class="tab-content hidden space-y-6">
-            <div id="planSummary" class="grid grid-cols-1 md:grid-cols-4 gap-6"></div>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 glass-card p-6 h-96 relative"><h3 class="text-xs font-bold text-slate-400 uppercase mb-4 tracking-widest">Resource Capacity</h3><div class="h-64"><canvas id="chartCapacity"></canvas></div></div>
-                <div class="glass-card p-6 space-y-6 overflow-y-auto max-h-[24rem]" id="capacityList"></div>
+            <div class="glass-card overflow-hidden">
+                <div class="px-8 py-5 border-b border-slate-50 bg-white flex justify-between items-center">
+                    <h3 class="text-xs font-black uppercase text-slate-400 tracking-widest">Active Inventory</h3>
+                    <span id="taskCounter" class="text-xs font-black bg-purple-100 text-purple-700 px-4 py-1.5 rounded-full">0 items</span>
+                </div>
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-400 border-b border-slate-50">
+                        <tr><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Name</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Status</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Sprint</th><th class="px-8 py-5 font-bold uppercase tracking-widest text-[10px]">Assignee</th></tr>
+                    </thead>
+                    <tbody id="mgmtTable" class="divide-y divide-slate-50 bg-white"></tbody>
+                </table>
             </div>
         </section>
 
-        <!-- CLIENT VIEW -->
-        <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-6" id="clientGrid"></section>
-
-        <!-- UNASSIGNED VIEW -->
-        <section id="view-unassigned" class="tab-content hidden space-y-6">
-            <div class="glass-card overflow-hidden"><div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-bold uppercase text-slate-400 tracking-widest text-orange-600 italic">Attention Required: Unassigned Work</h3><span id="unassignedCounter" class="text-xs font-black bg-orange-100 text-orange-600 px-3 py-1 rounded-full">0</span></div><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-slate-500 font-semibold border-b"><tr><th class="px-6 py-4">Task Name</th><th class="px-6 py-4">Sprint</th><th class="px-6 py-4">Client</th><th class="px-6 py-4">Status</th><th class="px-6 py-4">Urgency</th></tr></thead><tbody id="unassignedTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div>
+        <section id="view-plan" class="tab-content hidden space-y-8">
+            <div id="planSummary" class="grid grid-cols-1 md:grid-cols-4 gap-8"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 glass-card p-8 h-[500px] relative flex flex-col">
+                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em]">Capacity Management</h3>
+                    <div class="flex-1 relative"><canvas id="chartCapacity"></canvas></div>
+                </div>
+                <div class="glass-card p-8 space-y-6 overflow-y-auto max-h-[500px] bg-slate-50/20" id="capacityList"></div>
+            </div>
         </section>
 
-        <!-- NO DEADLINE VIEW -->
-        <section id="view-no-deadline" class="tab-content hidden space-y-6">
-            <div class="glass-card overflow-hidden"><div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-bold uppercase text-slate-400 tracking-widest">Tasks Without Deadlines</h3><span id="noDeadlineCounter" class="text-xs font-black bg-blue-100 text-blue-600 px-3 py-1 rounded-full">0</span></div><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-slate-500 font-semibold border-b"><tr><th class="px-6 py-4">Task Name</th><th class="px-6 py-4">Sprint</th><th class="px-6 py-4">Client</th><th class="px-6 py-4">Status</th><th class="px-6 py-4">Assignee</th></tr></thead><tbody id="noDeadlineTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div>
-        </section>
-
-        <!-- BACKLOG VIEW -->
-        <section id="view-backlog" class="tab-content hidden space-y-6">
-            <div class="glass-card overflow-hidden"><div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-bold uppercase text-slate-400 tracking-widest">Backlog / Project Docs</h3><span id="backlogCounter" class="text-xs font-black bg-slate-100 text-slate-600 px-3 py-1 rounded-full">0</span></div><table class="w-full text-left text-sm"><thead class="bg-slate-50 text-slate-500 font-semibold border-b"><tr><th class="px-6 py-4">Requirement / Task Name</th><th class="px-6 py-4">Sprint</th><th class="px-6 py-4">Client</th><th class="px-6 py-4">Status</th></tr></thead><tbody id="backlogTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div>
-        </section>
+        <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-8" id="clientGrid"></section>
+        <section id="view-unassigned" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-orange-600 tracking-widest italic">High Priority: Unassigned Tasks</h3><span id="unassignedCounter" class="text-xs font-black bg-orange-100 text-orange-600 px-4 py-1.5 rounded-full">0</span></div><table class="w-full text-left text-sm"><tbody id="unassignedTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        <section id="view-no-deadline" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-blue-600 tracking-widest">Tasks Without Commitment Dates</h3><span id="noDeadlineCounter" class="text-xs font-black bg-blue-100 text-blue-600 px-4 py-1.5 rounded-full">0</span></div><table class="w-full text-left text-sm"><tbody id="noDeadlineTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        <section id="view-backlog" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-slate-500 tracking-widest">Requirements & Product Docs</h3><span id="backlogCounter" class="text-xs font-black bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full">0</span></div><table class="w-full text-left text-sm"><tbody id="backlogTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
     </main>
 
     <script>
@@ -210,75 +186,83 @@
         window.currentTab = 'mgmt';
         const DEV_CAPACITY = 32;
         let activeFilters = { clients: [], assignees: [], statuses: [], sprints: [] };
+        const SYNC_INTERVAL = 300; 
+        let nextSync = SYNC_INTERVAL;
+        let isSyncing = false;
 
-        const STATUS_COLORS = { 
-            'deployed': '#00A884', 
-            'pendingdeployment': '#D33131', 
-            'pendingdeployement': '#D33131', 
-            'test': '#00B8D9', 
-            'inreview': '#6E5DC6', 
-            'rework': '#FFCC00', 
-            're-work': '#FFCC00',
-            'inprogress': '#0084FF', 
-            'kiv': '#FF7A00', 
-            'todo': '#D9D9D9', 
-            'closed': '#2ecc71' 
-        };
-        function getStatusColor(key) { return STATUS_COLORS[key] || '#94a3b8'; }
+        const STATUS_COLORS = { 'deployed': '#00A884', 'pendingdeployment': '#D33131', 'test': '#00B8D9', 'inreview': '#6E5DC6', 'rework': '#FFCC00', 'inprogress': '#0084FF', 'kiv': '#FF7A00', 'todo': '#D9D9D9', 'closed': '#2ecc71' };
+        function getStatusColor(k) { return STATUS_COLORS[k.toLowerCase().replace(/[\s-]/g, '')] || '#94a3b8'; }
 
-        async function fetchRealData() {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+        async function fetchRealData(showOverlay = false) {
+            if (isSyncing) return;
+            isSyncing = true;
+            if (showOverlay) document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('syncStatus').innerText = "Syncing...";
             try {
-                const response = await fetch("https://dashboard.fatin-rasyidah.workers.dev/");
-                const json = await response.json();
+                const res = await fetch("https://dashboard.fatin-rasyidah.workers.dev/");
+                const json = await res.json();
                 window.tasks = json.tasks.map(t => {
-                    const clientField = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
-                    let clientName = "Internal";
-                    if (clientField?.value !== undefined && clientField.type_config?.options) {
-                        const opt = clientField.type_config.options.find(o => String(o.id) === String(clientField.value) || String(o.orderindex) === String(clientField.value));
-                        clientName = opt ? (opt.label || opt.name) : clientField.value;
+                    const cf = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
+                    let cName = "Internal";
+                    if (cf?.value !== undefined && cf.type_config?.options) {
+                        const opt = cf.type_config.options.find(o => String(o.id) === String(cf.value) || String(o.orderindex) === String(cf.value));
+                        cName = opt ? (opt.label || opt.name) : cf.value;
                     }
-                    const rawStatus = t.status?.status || "todo";
-                    const statusKey = rawStatus.toLowerCase().replace(/[\s]/g, '');
+                    const rStatus = t.status?.status || "todo";
+                    const sKey = rStatus.toLowerCase().replace(/[\s-]/g, '');
                     return {
-                        id: t.id, name: t.name, url: t.url, client: clientName, assignee: t.assignees?.[0]?.username || "Unassigned",
-                        status: t.status.status, statusKey: statusKey, sprint: t.list?.name || "Global",
-                        category: (t.list?.name || "").toLowerCase().includes('support') ? "Support" : "Sprint",
+                        id: t.id, name: t.name, url: t.url, client: cName, assignee: t.assignees?.[0]?.username || "Unassigned",
+                        status: rStatus, statusKey: sKey, sprint: t.list?.name || "Global",
                         hours: t.time_estimate ? Math.round(t.time_estimate / 3600000 * 10) / 10 : 0,
-                        isClosed: (statusKey === 'deployed' || statusKey === 'closed' || t.status?.type === 'closed'),
+                        isClosed: (sKey === 'deployed' || sKey === 'closed' || t.status?.type === 'closed'),
                         dueDate: t.due_date ? new Date(parseInt(t.due_date)) : null,
                         priority: t.priority?.priority || "None"
                     };
                 });
-                document.getElementById('syncStatus').innerText = `Sync: ${new Date().toLocaleTimeString()} (${window.tasks.length} items)`;
+                document.getElementById('syncStatus').innerText = `Updated: ${new Date().toLocaleTimeString()}`;
+                document.getElementById('autoSyncLabel').classList.remove('hidden');
+                resetTimer();
                 populateFilters();
                 renderView(window.currentTab); 
             } catch (err) { console.error(err); }
-            finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
+            finally { isSyncing = false; document.getElementById('loadingOverlay').classList.add('hidden'); }
+        }
+
+        function resetTimer() {
+            nextSync = SYNC_INTERVAL;
+            clearInterval(window.syncInterval);
+            window.syncInterval = setInterval(() => {
+                nextSync--;
+                if (nextSync <= 0) fetchRealData(false);
+                else {
+                    const m = Math.floor(nextSync / 60); const s = nextSync % 60;
+                    document.getElementById('nextSyncTimer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+                }
+            }, 1000);
         }
 
         function toggleFilterMenu(e, id) { e.stopPropagation(); document.querySelectorAll('.filter-content').forEach(c => { if(c.id !== id) c.classList.remove('show'); }); document.getElementById(id).classList.toggle('show'); }
         function populateFilters() {
-            const sortedAssignees = [...new Set(window.tasks.map(t => t.assignee))].sort((a,b) => a === "Unassigned" ? -1 : (b === "Unassigned" ? 1 : a.localeCompare(b)));
-            const sortedClients = [...new Set(window.tasks.map(t => t.client))].sort();
-            const configs = { filterClientContent: { items: sortedClients, key: 'clients', label: 'labelClient', title: 'Clients' }, filterAssigneeContent: { items: sortedAssignees, key: 'assignees', label: 'labelAssignee', title: 'Assignees' }, filterSprintContent: { items: [...new Set(window.tasks.map(t => t.sprint))].sort(), key: 'sprints', label: 'labelSprint', title: 'Sprints' }, filterStatusContent: { items: [...new Set(window.tasks.map(t => t.status))].sort(), key: 'statuses', label: 'labelStatus', title: 'Statuses' } };
+            const assignees = [...new Set(window.tasks.map(t => t.assignee))].sort((a,b) => a === "Unassigned" ? -1 : (b === "Unassigned" ? 1 : a.localeCompare(b)));
+            const clients = [...new Set(window.tasks.map(t => t.client))].sort();
+            const configs = { filterClientContent: { items: clients, key: 'clients', label: 'labelClient', title: 'Clients' }, filterAssigneeContent: { items: assignees, key: 'assignees', label: 'labelAssignee', title: 'Assignees' } };
             Object.keys(configs).forEach(id => {
                 const cfg = configs[id];
                 document.getElementById(id).innerHTML = cfg.items.map(item => `<div class="filter-item" onclick="toggleSelection(event, '${cfg.key}', '${item.replace(/'/g, "\\'")}', '${cfg.label}', '${cfg.title}')"><input type="checkbox" ${activeFilters[cfg.key].includes(item) ? 'checked' : ''}><span class="truncate">${item}</span></div>`).join('');
             });
         }
         function toggleSelection(e, key, val, labelId, title) { const idx = activeFilters[key].indexOf(val); if (idx === -1) activeFilters[key].push(val); else activeFilters[key].splice(idx, 1); const label = document.getElementById(labelId); label.innerText = activeFilters[key].length === 0 ? `All ${title}` : (activeFilters[key].length === 1 ? activeFilters[key][0] : `${activeFilters[key].length} selected`); e.currentTarget.querySelector('input').checked = activeFilters[key].includes(val); renderView(window.currentTab); }
-        function resetFilters() { activeFilters = { clients: [], assignees: [], statuses: [], sprints: [] }; ['labelClient', 'labelAssignee', 'labelSprint', 'labelStatus'].forEach(id => document.getElementById(id).innerText = `All ${id.replace('label', '')}s`); populateFilters(); renderView(window.currentTab); }
+        function resetFilters() { activeFilters = { clients: [], assignees: [], statuses: [], sprints: [] }; ['labelClient', 'labelAssignee'].forEach(id => document.getElementById(id).innerText = `All ${id.replace('label', '')}s`); populateFilters(); renderView(window.currentTab); }
 
         function switchTab(tabId) { window.currentTab = tabId; document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(`view-${tabId}`).classList.remove('hidden'); document.getElementById(`btn-${tabId}`).classList.add('active'); renderView(tabId); }
         
         function renderView(view) {
             const search = document.getElementById('mgmtSearch').value.toLowerCase();
-            window.currentFilteredTasks = window.tasks.filter(t => (activeFilters.clients.length === 0 || activeFilters.clients.includes(t.client)) && (activeFilters.assignees.length === 0 || activeFilters.assignees.includes(t.assignee)) && (activeFilters.sprints.length === 0 || activeFilters.sprints.includes(t.sprint)) && (activeFilters.statuses.length === 0 || activeFilters.statuses.includes(t.status)) && (t.name.toLowerCase().includes(search)));
+            window.currentFilteredTasks = window.tasks.filter(t => (activeFilters.clients.length === 0 || activeFilters.clients.includes(t.client)) && (activeFilters.assignees.length === 0 || activeFilters.assignees.includes(t.assignee)) && (t.name.toLowerCase().includes(search)));
             
             if (view === 'mgmt') {
-                document.getElementById('taskCounter').innerText = window.currentFilteredTasks.length;
-                document.getElementById('mgmtTable').innerHTML = window.currentFilteredTasks.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-4 font-bold text-slate-800">${t.name}</td><td class="px-6 py-4"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-6 py-4 text-slate-500 font-medium">${t.sprint}</td><td class="px-6 py-4 text-slate-500 font-medium">${t.assignee}</td></tr>`).join('') || '<tr><td colspan="4" class="p-10 text-center text-slate-400">No tasks.</td></tr>';
+                document.getElementById('taskCounter').innerText = `${window.currentFilteredTasks.length} items`;
+                document.getElementById('mgmtTable').innerHTML = window.currentFilteredTasks.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-5 font-black text-slate-800">${t.name}</td><td class="px-8 py-5"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-8 py-5 text-slate-400 font-bold">${t.sprint}</td><td class="px-8 py-5 text-slate-500 font-medium">${t.assignee}</td></tr>`).join('');
                 renderCharts(window.currentFilteredTasks);
             } else if (view === 'plan') renderPlanning(window.currentFilteredTasks);
             else if (view === 'client') renderClientProgress(window.currentFilteredTasks);
@@ -291,113 +275,115 @@
             const sMap = data.reduce((a, t) => { a[t.status] = (a[t.status]||0)+1; return a; }, {});
             const dMap = data.reduce((a, t) => { a[t.assignee] = (a[t.assignee]||0)+1; return a; }, {});
             if(charts.status) charts.status.destroy();
-            charts.status = new Chart(document.getElementById('chartStatus'), { type: 'doughnut', data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: Object.keys(sMap).map(s => getStatusColor(s.toLowerCase().replace(/[\s-]/g, ''))) }] }, options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, plugins: { legend: { display: false }, datalabels: { color: '#fff', font: { weight: 'bold', size: 10 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } } } } });
+            charts.status = new Chart(document.getElementById('chartStatus'), { type: 'doughnut', data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: Object.keys(sMap).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 20 }] }, options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { weight: '800', size: 9 } } }, datalabels: { color: '#fff', font: { weight: '900', size: 10 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } } }, cutout: '65%' } });
             if(charts.dev) charts.dev.destroy();
-            charts.dev = new Chart(document.getElementById('chartAssignee'), { type: 'bar', data: { labels: Object.keys(dMap), datasets: [{ label: 'Tasks', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 4 }] }, options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.dev.data.labels[i[0].index], 'assignee'); }, plugins: { legend: { display: false }, datalabels: { display: false } } } });
+            charts.dev = new Chart(document.getElementById('chartAssignee'), { type: 'bar', data: { labels: Object.keys(dMap), datasets: [{ label: 'Tasks', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 8, barThickness: 24 }] }, options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.dev.data.labels[i[0].index], 'assignee'); }, plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false }, border: { display: false } }, x: { grid: { display: false }, border: { display: false }, ticks: { font: { weight: '700', size: 10 } } } } } });
         }
 
         function openDrillDownPopup(val, type) {
             document.getElementById('listModalTitle').innerText = val;
-            document.getElementById('modalChartLabel').innerText = `${type.toUpperCase()} DRILLDOWN`;
             renderModalChart(type, val);
             refreshDrillDownList(type, val);
             document.getElementById('taskListModal').classList.add('show');
         }
+
         function renderModalChart(type, initial) {
             const set = window.tasks.filter(t => (type === 'client' ? t.client === initial : (type === 'assignee' ? t.assignee === initial : true)));
             const map = set.reduce((a, t) => { const k = t.status; a[k] = (a[k]||0)+1; return a; }, {});
             if (charts.modal) charts.modal.destroy();
-            charts.modal = new Chart(document.getElementById('modalChart'), { type: 'doughnut', data: { labels: Object.keys(map), datasets: [{ data: Object.values(map), backgroundColor: Object.keys(map).map(s => getStatusColor(s.toLowerCase().replace(/[\s-]/g, ''))) }] }, options: { maintainAspectRatio: false, onClick: (e, i) => { if (i.length > 0) refreshDrillDownList(type, initial, charts.modal.data.labels[i[0].index]); }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } }, datalabels: { color: '#fff', formatter: (v, ctx) => { let s = 0; ctx.chart.data.datasets[0].data.map(d => s += d); return (v*100/s).toFixed(0)+"%"; } } } } });
+            
+            charts.modal = new Chart(document.getElementById('modalChart'), { 
+                type: 'doughnut', 
+                data: { labels: Object.keys(map), datasets: [{ data: Object.values(map), backgroundColor: Object.keys(map).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 15 }] }, 
+                options: { 
+                    maintainAspectRatio: false, 
+                    // CRITICAL: selection logic fix
+                    onClick: (e, i) => { 
+                        if (i.length > 0) {
+                            const index = i[0].index;
+                            const newSubVal = charts.modal.data.labels[index];
+                            refreshDrillDownList(type, initial, newSubVal); 
+                        }
+                    }, 
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { font: { weight: '800', size: 9 }, usePointStyle: true } }, 
+                        datalabels: { color: '#fff', font: { weight: '900' }, formatter: (v, ctx) => { let s = 0; ctx.chart.data.datasets[0].data.map(d => s += d); return (v*100/s).toFixed(0)+"%"; } } 
+                    },
+                    cutout: '60%'
+                } 
+            });
         }
+
         function refreshDrillDownList(type, val, sub = null) {
             let f = [];
+            const displayVal = sub || val;
             if (type === 'client') f = window.tasks.filter(t => t.client === val && (sub ? t.status === sub : true));
             else if (type === 'assignee') f = window.tasks.filter(t => t.assignee === val && (sub ? t.status === sub : true));
-            else f = window.tasks.filter(t => t.status === val);
+            else f = window.tasks.filter(t => t.status === displayVal);
+            
+            document.getElementById('listModalTitle').innerText = (type === 'client' || type === 'assignee') ? `${val} ${sub ? ' - ' + sub : ''}` : displayVal;
             document.getElementById('listModalCounter').innerText = f.length;
-            document.getElementById('listModalTableBody').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-4"><div class="font-bold">${t.name}</div><div class="text-[10px] text-slate-400 uppercase font-bold">${t.client}</div></td><td class="px-6 py-4 text-slate-500">${t.sprint}</td><td class="px-6 py-4"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('');
+            document.getElementById('listModalTableBody').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-5"><div class="font-bold text-slate-800">${t.name}</div><div class="text-[10px] text-slate-400 uppercase font-black tracking-widest">${t.client}</div></td><td class="px-8 py-5 text-slate-500 font-bold">${t.sprint}</td><td class="px-8 py-5"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('');
         }
 
         function openTaskDetail(id) {
             const t = window.tasks.find(x => x.id === id); if (!t) return;
             document.getElementById('detailContent').innerHTML = `
-                <div><h3 class="text-2xl font-black text-slate-900">${t.name}</h3><div class="text-[10px] font-bold text-purple-600 uppercase mt-2">${t.category}</div></div>
-                <div class="grid grid-cols-2 gap-6 py-4 border-y border-slate-50">
-                    <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Status</p><span class="st-badge st-${t.statusKey}">${t.status}</span></div>
-                    <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Assignee</p><p class="font-bold text-slate-700">${t.assignee}</p></div>
-                    <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Sprint</p><p class="font-medium text-slate-600">${t.sprint}</p></div>
-                    <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Client</p><p class="font-bold text-slate-700">${t.client}</p></div>
-                    <div class="col-span-2"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Due Date</p><p class="font-bold text-slate-900">${t.dueDate ? t.dueDate.toLocaleDateString() : 'No Deadline'}</p></div>
+                <div><h3 class="text-3xl font-black text-slate-900 leading-tight">${t.name}</h3><div class="text-[11px] font-black text-purple-600 uppercase mt-3 tracking-[0.2em]">Requirement Reference</div></div>
+                <div class="grid grid-cols-2 gap-8 py-8 border-y border-slate-100">
+                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Workflow Status</p><span class="st-badge st-${t.statusKey}">${t.status}</span></div>
+                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Assignee</p><p class="font-bold text-slate-800">${t.assignee}</p></div>
+                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Target Sprint</p><p class="font-bold text-slate-600">${t.sprint}</p></div>
+                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Client Name</p><p class="font-bold text-slate-800">${t.client}</p></div>
+                    <div class="col-span-2"><p class="text-[10px] font-black text-slate-300 uppercase mb-2 tracking-widest">Delivery Deadline</p><p class="text-xl font-black text-slate-900">${t.dueDate ? t.dueDate.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric'}) : 'NOT SCHEDULED'}</p></div>
                 </div>
-                <div class="flex justify-between items-center pt-2"><div class="text-sm italic">Estimated: ${t.hours}h</div><a href="${t.url}" target="_blank" class="bg-slate-900 text-white px-6 py-2.5 rounded-lg font-bold text-xs flex items-center gap-2">Open in ClickUp <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-width="2"></path></svg></a></div>`;
+                <div class="flex justify-between items-center pt-6"><div class="text-sm font-bold text-slate-400 uppercase">Effort: <span class="text-slate-800">${t.hours}h</span></div><a href="${t.url}" target="_blank" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase flex items-center gap-3 hover:bg-slate-800 transition-all shadow-xl">Open In ClickUp <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-width="2.5"></path></svg></a></div>`;
             document.getElementById('taskDetailModal').classList.add('show');
         }
 
         function closeModal(id) { document.getElementById(id).classList.remove('show'); }
         function closeAllModals(e) { if(e.target.classList.contains('modal-overlay')) document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show')); }
-        window.addEventListener('click', (e) => { if(!e.target.closest('.filter-dropdown')) document.querySelectorAll('.filter-content').forEach(c => c.classList.remove('show')); });
+        window.addEventListener('click', () => document.querySelectorAll('.filter-content').forEach(c => c.classList.remove('show')));
 
         function renderPlanning(data) {
             const total = data.reduce((s, t) => s + t.hours, 0);
-            document.getElementById('planSummary').innerHTML = `<div class="glass-card p-6 flex flex-col items-center col-span-full"><h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Selected Load</h3><div class="text-4xl font-black">${total.toFixed(1)}h</div></div>`;
+            document.getElementById('planSummary').innerHTML = `<div class="glass-card p-10 flex flex-col items-center col-span-full bg-gradient-to-br from-white to-slate-50 border-none shadow-xl"><h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Total Capacity Utilised</h3><div class="text-6xl font-black text-slate-900">${total.toFixed(1)}<span class="text-2xl ml-2 text-slate-300">hrs</span></div></div>`;
             const devHrs = data.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + t.hours; return acc; }, {});
             const labels = Object.keys(devHrs);
             if(charts.plan) charts.plan.destroy();
-            charts.plan = new Chart(document.getElementById('chartCapacity'), { type: 'bar', data: { labels, datasets: [{ label: 'Hours', data: Object.values(devHrs), backgroundColor: '#7c3aed', borderRadius: 4 }, { label: 'Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9' }] }, options: { maintainAspectRatio: false, indexAxis: 'y', onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.plan.data.labels[i[0].index], 'assignee'); }, plugins: { datalabels: { display: false } } } });
-            document.getElementById('capacityList').innerHTML = labels.map(n => { const u = devHrs[n], p = Math.min((u/DEV_CAPACITY)*100, 100); return `<div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>${n}</span><span>${u.toFixed(1)}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${u > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${p}%"></div></div></div>`; }).join('');
+            charts.plan = new Chart(document.getElementById('chartCapacity'), { type: 'bar', data: { labels, datasets: [{ label: 'Used', data: Object.values(devHrs), backgroundColor: '#7c3aed', borderRadius: 10, barThickness: 30 }, { label: 'Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9', borderRadius: 10, barThickness: 30 }] }, options: { maintainAspectRatio: false, indexAxis: 'y', onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.plan.data.labels[i[0].index], 'assignee'); }, plugins: { datalabels: { display: false }, legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false }, ticks: { font: { weight: '800', size: 11 } } } } } });
+            document.getElementById('capacityList').innerHTML = labels.map(n => { const u = devHrs[n], p = Math.min((u/DEV_CAPACITY)*100, 100); return `<div class="space-y-2 p-2 rounded-xl hover:bg-white transition-colors"><div class="flex justify-between text-xs font-black uppercase tracking-widest"><span>${n}</span><span class="${u > DEV_CAPACITY ? 'text-red-600' : 'text-slate-600'}">${u.toFixed(1)}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${u > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${p}%"></div></div></div>`; }).join('');
         }
 
         function renderClientProgress(data) {
             const clients = [...new Set(data.map(t => t.client))];
-            const now = new Date();
             document.getElementById('view-client').innerHTML = clients.map(c => {
                 const ct = data.filter(t => t.client === c);
                 const done = ct.filter(t => t.isClosed).length;
                 const prog = ct.length > 0 ? Math.round((done / ct.length) * 100) : 0;
-                const remaining = ct.length - done;
-                const agreementStr = window.pmDeadlines[window.getClientDocId(c)] || "";
-                const agreementDate = agreementStr ? new Date(agreementStr) : null;
-                const taskDeadlines = ct.map(t => t.dueDate).filter(d => d !== null);
-                const latestTaskDeadline = taskDeadlines.length > 0 ? new Date(Math.max(...taskDeadlines)) : null;
-                let healthColor = "text-slate-400"; let healthLabel = "No Agreement";
-                if (agreementDate) {
-                    const diff = agreementDate - now; const diffDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
-                    if (remaining > 0 && diffDays < 0) { healthColor = "text-red-600 font-black"; healthLabel = "OVERDUE"; }
-                    else if (remaining > 0 && diffDays <= 7) { healthColor = "text-orange-500 font-bold"; healthLabel = `Due in ${diffDays}d`; }
-                    else { healthColor = "text-emerald-600 font-bold"; healthLabel = "On Track"; }
-                    if (latestTaskDeadline && latestTaskDeadline > agreementDate && remaining > 0) { healthColor = "text-red-700 font-black underline"; healthLabel = "RISK: TASK > AGREEMENT"; }
-                }
-                return `<div class="glass-card p-6 space-y-4 cursor-pointer-hover flex flex-col" onclick="openDrillDownPopup('${c.replace(/'/g, "\\'")}', 'client')">
-                    <div class="flex justify-between items-start"><h4 class="font-bold text-slate-800 leading-tight">${c}</h4><span class="text-xl font-black text-purple-600">${prog}%</span></div>
-                    <div class="space-y-2" onclick="event.stopPropagation()">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">Agreement Date</p>
-                        <input type="date" value="${agreementStr}" onchange="saveAgreementDate('${c}', this.value)" class="w-full text-xs p-1 border rounded bg-slate-50 focus:bg-white transition-all outline-none">
-                    </div>
-                    <div class="flex justify-between text-[10px] uppercase font-bold"><span class="${healthColor}">${healthLabel}</span><span class="text-slate-400">Items: ${remaining} left</span></div>
-                    <div class="progress-bar"><div class="progress-fill ${prog === 100 ? 'bg-emerald-500' : 'bg-purple-600'}" style="width: ${prog}%"></div></div>
-                </div>`;
+                return `<div class="glass-card p-8 space-y-6 cursor-pointer-hover flex flex-col justify-between" onclick="openDrillDownPopup('${c.replace(/'/g, "\\'")}', 'client')"><div><div class="flex justify-between items-start mb-2"><h4 class="font-black text-slate-800 tracking-tight text-lg">${c}</h4><span class="text-2xl font-black text-purple-600">${prog}%</span></div><div class="progress-bar"><div class="progress-fill ${prog === 100 ? 'bg-emerald-500' : 'bg-purple-600'}" style="width: ${prog}%"></div></div></div><div class="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.1em] border-t border-slate-50 pt-4"><div class="flex flex-col"><span class="text-slate-800 text-sm">${ct.length - done}</span><span>Pending</span></div><div class="flex flex-col text-right"><span class="text-slate-800 text-sm">${ct.length}</span><span>Total</span></div></div></div>`;
             }).join('');
         }
 
         function renderUnassigned(data) {
-            const unassigned = data.filter(t => t.assignee === "Unassigned");
-            document.getElementById('unassignedCounter').innerText = unassigned.length;
-            document.getElementById('unassignedTable').innerHTML = unassigned.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-4 font-bold text-slate-800 flex items-center gap-2">${t.name} <span class="bg-red-500 text-white text-[8px] px-1 rounded alert-pulse">ATTENTION</span></td><td class="px-6 py-4 text-slate-500">${t.sprint}</td><td class="px-6 py-4 text-slate-500">${t.client}</td><td class="px-6 py-4"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-6 py-4 font-bold uppercase text-[10px] text-red-500">${t.priority}</td></tr>`).join('') || '<tr><td colspan="5" class="p-10 text-center text-slate-400">All tasks assigned.</td></tr>';
+            const f = data.filter(t => t.assignee === "Unassigned");
+            document.getElementById('unassignedCounter').innerText = f.length;
+            document.getElementById('unassignedTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-800 flex items-center gap-3"><div>${t.name}</div> <span class="bg-red-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black tracking-widest alert-pulse shadow-sm">ATTENTION</span></td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-8 py-6 font-black uppercase text-[10px] text-red-600 tracking-widest">${t.priority}</td></tr>`).join('') || '<tr><td class="p-20 text-center font-black text-slate-300">ALL TASKS ALLOCATED</td></tr>';
         }
 
         function renderNoDeadline(data) {
-            const list = data.filter(t => !t.dueDate);
-            document.getElementById('noDeadlineCounter').innerText = list.length;
-            document.getElementById('noDeadlineTable').innerHTML = list.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-4 font-bold text-slate-800">${t.name}</td><td class="px-6 py-4 text-slate-500">${t.sprint}</td><td class="px-6 py-4 text-slate-500">${t.client}</td><td class="px-6 py-4"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-6 py-4 text-slate-500">${t.assignee}</td></tr>`).join('') || '<tr><td colspan="5" class="p-10 text-center text-slate-400">All tasks have deadlines.</td></tr>';
+            const f = data.filter(t => !t.dueDate);
+            document.getElementById('noDeadlineCounter').innerText = f.length;
+            document.getElementById('noDeadlineTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-800">${t.name}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.assignee}</td></tr>`).join('') || '<tr><td class="p-20 text-center font-black text-slate-300">SCHEDULE COMPLETE</td></tr>';
         }
 
         function renderBacklog(data) {
-            const list = data.filter(t => t.sprint.toLowerCase().includes('backlog') || t.status.toLowerCase().includes('backlog'));
-            document.getElementById('backlogCounter').innerText = list.length;
-            document.getElementById('backlogTable').innerHTML = list.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-4 font-bold text-slate-800">${t.name}</td><td class="px-6 py-4 text-slate-500">${t.sprint}</td><td class="px-6 py-4 text-slate-500">${t.client}</td><td class="px-6 py-4"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('') || '<tr><td colspan="4" class="p-10 text-center text-slate-400">Backlog is empty.</td></tr>';
+            const f = data.filter(t => t.sprint.toLowerCase().includes('backlog') || t.status.toLowerCase().includes('backlog'));
+            document.getElementById('backlogCounter').innerText = f.length;
+            document.getElementById('backlogTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-800">${t.name}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('') || '<tr><td class="p-20 text-center font-black text-slate-300">BACKLOG CLEAR</td></tr>';
         }
 
-        window.onload = fetchRealData;
+        window.onload = () => fetchRealData(true);
     </script>
 </body>
 </html>
