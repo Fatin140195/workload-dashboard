@@ -10,7 +10,7 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; height: 100vh; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; height: 100vh; overflow-x: hidden; font-size: 0.875rem; }
         
         /* Layering Fix: Ensuring filters and modals are on top */
         .filter-container { position: relative; z-index: 100; }
@@ -20,23 +20,23 @@
             position: absolute; 
             background: rgba(255, 255, 255, 0.99); 
             backdrop-filter: blur(12px);
-            min-width: 280px; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
+            min-width: 240px; 
+            box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.2); 
             z-index: 500; 
             border: 1px solid #e2e8f0; 
-            border-radius: 1rem; 
-            max-height: 400px; 
+            border-radius: 0.75rem; 
+            max-height: 350px; 
             overflow-y: auto; 
-            padding: 12px; 
-            margin-top: 10px; 
+            padding: 10px; 
+            margin-top: 8px; 
         }
         .filter-content.show { display: block; animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
-        .glass-card:hover { transform: translateY(-3px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
+        .glass-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08); }
         
-        .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; padding: 1.25rem 1rem; color: #94a3b8; font-size: 0.75rem; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 0.075em; }
+        .tab-btn { border-bottom: 2px solid transparent; transition: all 0.3s; padding: 1rem 0.75rem; color: #94a3b8; font-size: 0.7rem; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; }
         .tab-btn.active { border-bottom-color: #7c3aed; color: #7c3aed; }
         
         /* Modal Layering */
@@ -44,22 +44,22 @@
             display: none; 
             position: fixed; 
             inset: 0; 
-            background: rgba(15, 23, 42, 0.85); 
-            backdrop-filter: blur(8px); 
+            background: rgba(15, 23, 42, 0.8); 
+            backdrop-filter: blur(6px); 
             z-index: 1000; 
             align-items: center; 
             justify-content: center; 
-            padding: 2rem; 
+            padding: 1.5rem; 
         }
         #taskListModal { z-index: 1100; }
         #taskDetailModal { z-index: 1200; } 
         .modal-overlay.show { display: flex; }
         
-        .filter-item { display: flex; align-items: center; padding: 10px 14px; font-size: 0.85rem; cursor: pointer; border-radius: 0.75rem; transition: background 0.2s; user-select: none; font-weight: 500; }
+        .filter-item { display: flex; align-items: center; padding: 8px 12px; font-size: 0.8rem; cursor: pointer; border-radius: 0.5rem; transition: background 0.2s; user-select: none; font-weight: 500; }
         .filter-item:hover { background: #f1f5f9; }
-        .filter-item input { margin-right: 14px; accent-color: #7c3aed; width: 18px; height: 18px; pointer-events: none; border-radius: 6px; }
+        .filter-item input { margin-right: 10px; accent-color: #7c3aed; width: 16px; height: 16px; pointer-events: none; border-radius: 4px; }
 
-        .st-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 12px; border-radius: 8px; display: inline-block; white-space: nowrap; letter-spacing: 0.05em; }
+        .st-badge { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 3px 10px; border-radius: 6px; display: inline-block; white-space: nowrap; letter-spacing: 0.05em; }
         .st-deployed { background: #00A884; color: white; }
         .st-pendingdeployment, .st-pendingdeployement { background: #D33131; color: white; }
         .st-test { background: #00B8D9; color: white; }
@@ -70,13 +70,13 @@
         .st-todo { background: #D9D9D9; color: #475569; }
         .st-closed { background: #2ecc71; color: white; }
         
-        .progress-bar { height: 12px; border-radius: 6px; background: #f1f5f9; overflow: hidden; }
+        .progress-bar { height: 8px; border-radius: 4px; background: #f1f5f9; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
-        @keyframes pulse-alert { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.95); } }
+        @keyframes pulse-alert { 0%, 100% { background-color: #dc2626; transform: scale(1); } 50% { background-color: #ef4444; transform: scale(0.95); } }
         .alert-pulse { animation: pulse-alert 1.5s infinite; }
         
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
@@ -84,28 +84,26 @@
 
     <!-- DRILL-DOWN POPUP (SPLIT VIEW) -->
     <div id="taskListModal" class="modal-overlay" onclick="closeAllModals(event)">
-        <div class="glass-card w-full max-w-6xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border-none" onclick="event.stopPropagation()">
-            <div class="px-8 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
-                <div class="flex items-center gap-5">
-                    <h2 class="text-2xl font-black text-slate-800 tracking-tighter" id="listModalTitle">Context Overview</h2>
-                    <span id="listModalCounter" class="text-sm font-black bg-purple-100 text-purple-700 px-4 py-1.5 rounded-2xl shadow-inner">0 items</span>
+        <div class="glass-card w-full max-w-5xl max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border-none" onclick="event.stopPropagation()">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-black text-slate-800 tracking-tight" id="listModalTitle">Context Overview</h2>
+                    <span id="listModalCounter" class="text-xs font-black bg-purple-100 text-purple-700 px-3 py-1 rounded-xl shadow-inner">0 items</span>
                 </div>
-                <button onclick="closeModal('taskListModal')" class="text-slate-400 hover:text-slate-600 p-2 transition-all duration-200">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <button onclick="closeModal('taskListModal')" class="text-slate-400 hover:text-slate-600 p-1.5 transition-all duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                 </button>
             </div>
             <div class="flex-1 flex overflow-hidden">
-                <!-- LHS: Interactive chart -->
-                <div class="w-1/3 border-r border-slate-100 bg-slate-50/50 p-8 flex flex-col items-center">
-                    <h3 id="modalChartLabel" class="text-[10px] font-black text-slate-400 uppercase mb-6 tracking-[0.2em] text-center">Interactive Filter</h3>
-                    <div class="w-full flex-1 relative min-h-[300px] max-h-[400px]"><canvas id="modalChart"></canvas></div>
-                    <p class="text-[11px] text-slate-400 mt-4 text-center font-bold italic">Click chart segments to update table</p>
+                <div class="w-1/3 border-r border-slate-100 bg-slate-50/50 p-6 flex flex-col items-center">
+                    <h3 id="modalChartLabel" class="text-[9px] font-black text-slate-400 uppercase mb-4 tracking-[0.2em] text-center">Interactive Filter</h3>
+                    <div class="w-full flex-1 relative min-h-[250px] max-h-[350px]"><canvas id="modalChart"></canvas></div>
+                    <p class="text-[10px] text-slate-400 mt-4 text-center font-bold italic">Click chart segments to filter</p>
                 </div>
-                <!-- RHS: Task table -->
-                <div class="w-2/3 flex flex-col bg-white overflow-y-auto">
-                    <table class="w-full text-left text-sm border-collapse">
-                        <thead class="bg-white text-slate-400 sticky top-0 z-10 border-b border-slate-50 shadow-sm">
-                            <tr><th class="px-8 py-4 font-black uppercase tracking-widest text-[10px]">Requirement</th><th class="px-8 py-4 font-black uppercase tracking-widest text-[10px]">Sprint</th><th class="px-8 py-4 font-black uppercase tracking-widest text-[10px]" id="listModalCol3">Info</th></tr>
+                <div class="w-2/3 flex flex-col bg-white overflow-y-auto text-xs">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white text-slate-400 sticky top-0 z-10 border-b border-slate-50">
+                            <tr><th class="px-6 py-3 font-bold uppercase tracking-widest text-[9px]">Requirement</th><th class="px-6 py-3 font-bold uppercase tracking-widest text-[9px]">Sprint</th><th class="px-6 py-3 font-bold uppercase tracking-widest text-[9px]" id="listModalCol3">Info</th></tr>
                         </thead>
                         <tbody id="listModalTableBody" class="divide-y divide-slate-50"></tbody>
                     </table>
@@ -114,114 +112,113 @@
         </div>
     </div>
 
-    <!-- TASK DETAIL POPUP (Requirement Reference Style) -->
+    <!-- TASK DETAIL POPUP -->
     <div id="taskDetailModal" class="modal-overlay" onclick="closeAllModals(event)">
-        <div class="glass-card w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl border-none flex flex-col" onclick="event.stopPropagation()">
-            <div class="px-8 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
-                <h2 class="text-sm font-black text-slate-400 uppercase tracking-widest">Requirement Detail View</h2>
-                <button onclick="closeModal('taskDetailModal')" class="text-slate-400 hover:text-slate-600 p-2 transition-all duration-200">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <div class="glass-card w-full max-w-xl max-h-[80vh] overflow-hidden shadow-2xl border-none flex flex-col" onclick="event.stopPropagation()">
+            <div class="px-6 py-3 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest">Requirement Detail</h2>
+                <button onclick="closeModal('taskDetailModal')" class="text-slate-400 hover:text-slate-600 p-1.5 transition-all duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                 </button>
             </div>
-            <div class="p-10 space-y-8 bg-white overflow-y-auto" id="detailContent"></div>
+            <div class="p-8 space-y-6 bg-white overflow-y-auto" id="detailContent"></div>
         </div>
     </div>
 
     <header class="bg-white/90 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-[150]">
-        <div class="max-w-[1600px] mx-auto px-6 h-20 flex justify-between items-center text-slate-900">
+        <div class="max-w-[1400px] mx-auto px-5 h-16 flex justify-between items-center text-slate-900">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl flex items-center justify-center shadow-xl">
-                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" stroke-width="2"></path></svg>
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-lg flex items-center justify-center shadow-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" stroke-width="2"></path></svg>
                 </div>
                 <div>
-                    <h1 class="text-xl font-black tracking-tighter">Sprint Console</h1>
+                    <h1 class="text-lg font-black tracking-tighter leading-tight">Sprint Console</h1>
                     <div class="flex items-center gap-2">
-                        <p id="syncStatus" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic tracking-wider">Awaiting Sync</p>
-                        <span id="autoSyncLabel" class="text-[10px] text-purple-600 font-black uppercase tracking-widest hidden flex items-center gap-1">
+                        <p id="syncStatus" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic tracking-wider">Awaiting Sync</p>
+                        <span id="autoSyncLabel" class="text-[9px] text-purple-600 font-black uppercase tracking-widest hidden flex items-center gap-1">
                             <span class="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span>
-                            Live Sync in: <span id="nextSyncTimer">5:00</span>
+                            Auto: <span id="nextSyncTimer">5:00</span>
                         </span>
                     </div>
                 </div>
             </div>
-            <nav class="flex bg-slate-100 p-1 rounded-xl">
-                <div onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active px-5 rounded-xl">Management</div>
-                <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn px-5 rounded-xl">Planning</div>
-                <div onclick="switchTab('client')" id="btn-client" class="tab-btn px-5 rounded-xl">Clients</div>
-                <div onclick="switchTab('unassigned')" id="btn-unassigned" class="tab-btn px-5 rounded-xl">Attention</div>
-                <div onclick="switchTab('no-deadline')" id="btn-no-deadline" class="tab-btn px-5 rounded-xl">Deadlines</div>
-                <div onclick="switchTab('backlog')" id="btn-backlog" class="tab-btn px-5 rounded-xl">Backlog</div>
+            <nav class="flex bg-slate-100 p-1 rounded-lg">
+                <div onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active px-4 rounded-md">Management</div>
+                <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn px-4 rounded-md">Planning</div>
+                <div onclick="switchTab('client')" id="btn-client" class="tab-btn px-4 rounded-md">Clients</div>
+                <div onclick="switchTab('unassigned')" id="btn-unassigned" class="tab-btn px-4 rounded-md">Attention</div>
+                <div onclick="switchTab('no-deadline')" id="btn-no-deadline" class="tab-btn px-4 rounded-md">Deadlines</div>
+                <div onclick="switchTab('backlog')" id="btn-backlog" class="tab-btn px-4 rounded-md">Backlog</div>
             </nav>
-            <button onclick="fetchRealData(true)" class="bg-slate-900 text-white text-[11px] px-6 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95">Manual Sync</button>
+            <button onclick="fetchRealData(true)" class="bg-slate-900 text-white text-[10px] px-5 py-2.5 rounded-lg font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-sm active:scale-95">Sync</button>
         </div>
     </header>
 
-    <main class="max-w-[1600px] mx-auto px-6 py-8">
+    <main class="max-w-[1400px] mx-auto px-5 py-6">
         <div id="loadingOverlay" class="fixed inset-0 bg-white/70 backdrop-blur-md z-[300] flex items-center justify-center hidden">
-            <div class="flex flex-col items-center gap-5">
-                <div class="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                <p class="text-sm font-black text-slate-900 uppercase tracking-[0.4em]">Optimizing Dashboard...</p>
+            <div class="flex flex-col items-center gap-4">
+                <div class="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-xs font-black text-slate-900 uppercase tracking-[0.3em]">Optimizing Dashboard...</p>
             </div>
         </div>
 
-        <!-- MANAGEMENT VIEW -->
-        <section id="view-mgmt" class="tab-content space-y-8">
-            <div class="glass-card p-5 flex flex-wrap gap-5 items-center bg-white/60 filter-container">
-                <div class="flex-1 min-w-[300px]">
-                    <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Search project inventory..." class="w-full px-6 py-3.5 text-sm bg-slate-100 border-none rounded-xl focus:ring-4 focus:ring-purple-100 outline-none transition-all font-bold text-slate-700 shadow-inner">
+        <section id="view-mgmt" class="tab-content space-y-6">
+            <div class="glass-card p-4 flex flex-wrap gap-4 items-center bg-white/60 filter-container">
+                <div class="flex-1 min-w-[250px]">
+                    <input type="text" id="mgmtSearch" oninput="renderView('mgmt')" placeholder="Search project inventory..." class="w-full px-4 py-2.5 text-sm bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-purple-100 outline-none transition-all font-bold text-slate-700 shadow-inner">
                 </div>
-                <div class="flex gap-4 flex-wrap">
+                <div class="flex gap-3 flex-wrap">
                     <div class="filter-dropdown">
-                        <button onclick="toggleFilterMenu(event, 'filterClientContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest min-w-[170px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
+                        <button onclick="toggleFilterMenu(event, 'filterClientContent')" class="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest min-w-[150px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
                             <span id="labelClient">All Clients</span>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
                         </button>
                         <div id="filterClientContent" class="filter-content" onclick="event.stopPropagation()"></div>
                     </div>
                     <div class="filter-dropdown">
-                        <button onclick="toggleFilterMenu(event, 'filterAssigneeContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest min-w-[170px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
+                        <button onclick="toggleFilterMenu(event, 'filterAssigneeContent')" class="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest min-w-[150px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
                             <span id="labelAssignee">All Assignees</span>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
                         </button>
                         <div id="filterAssigneeContent" class="filter-content" onclick="event.stopPropagation()"></div>
                     </div>
                     <div class="filter-dropdown">
-                        <button onclick="toggleFilterMenu(event, 'filterSprintContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest min-w-[170px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
+                        <button onclick="toggleFilterMenu(event, 'filterSprintContent')" class="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest min-w-[150px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
                             <span id="labelSprint">All Sprints</span>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
                         </button>
                         <div id="filterSprintContent" class="filter-content" onclick="event.stopPropagation()"></div>
                     </div>
                     <div class="filter-dropdown">
-                        <button onclick="toggleFilterMenu(event, 'filterStatusContent')" class="bg-white border border-slate-200 px-5 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest min-w-[170px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
+                        <button onclick="toggleFilterMenu(event, 'filterStatusContent')" class="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest min-w-[150px] text-left flex justify-between items-center hover:bg-slate-50 transition-colors">
                             <span id="labelStatus">All Statuses</span>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2.5"></path></svg>
                         </button>
                         <div id="filterStatusContent" class="filter-content" onclick="event.stopPropagation()"></div>
                     </div>
                 </div>
-                <button onclick="resetFilters()" class="text-xs font-black text-slate-400 hover:text-purple-600 uppercase tracking-[0.2em] px-4">Reset</button>
+                <button onclick="resetFilters()" class="text-[10px] font-black text-slate-400 hover:text-purple-600 uppercase tracking-widest px-2">Reset</button>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-center">
-                <div class="glass-card p-10 h-[500px] relative flex flex-col items-center">
-                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.3em]">Sprint Health Distribution</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
+                <div class="glass-card p-6 h-[380px] relative flex flex-col items-center">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-[0.3em]">Sprint Health Mix</h3>
                     <div class="flex-1 w-full relative"><canvas id="chartStatus"></canvas></div>
                 </div>
-                <div class="glass-card p-10 h-[500px] relative flex flex-col items-center">
-                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.3em]">Developer Loading</h3>
+                <div class="glass-card p-6 h-[380px] relative flex flex-col items-center">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-[0.3em]">Developer Loading</h3>
                     <div class="flex-1 w-full relative"><canvas id="chartAssignee"></canvas></div>
                 </div>
             </div>
 
-            <div class="glass-card overflow-hidden border-none shadow-xl">
-                <div class="px-8 py-5 border-b border-slate-100 bg-white flex justify-between items-center">
-                    <h3 class="text-xs font-black uppercase text-slate-400 tracking-widest">Active Inventory</h3>
-                    <span id="taskCounter" class="text-xs font-black bg-purple-100 text-purple-700 px-5 py-2 rounded-full shadow-inner">0 items</span>
+            <div class="glass-card overflow-hidden border-none shadow-sm">
+                <div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center">
+                    <h3 class="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Inventory</h3>
+                    <span id="taskCounter" class="text-[10px] font-black bg-purple-100 text-purple-700 px-3 py-1 rounded-lg shadow-inner">0 items</span>
                 </div>
-                <table class="w-full text-left text-sm">
+                <table class="w-full text-left text-[13px]">
                     <thead class="bg-slate-50 text-slate-400 border-b border-slate-50">
-                        <tr><th class="px-10 py-5 font-black uppercase tracking-widest text-[10px]">Name</th><th class="px-10 py-5 font-black uppercase tracking-widest text-[10px]">Status</th><th class="px-10 py-5 font-black uppercase tracking-widest text-[10px]">Sprint</th><th class="px-10 py-5 font-black uppercase tracking-widest text-[10px]">Assignee</th></tr>
+                        <tr><th class="px-6 py-3 font-bold uppercase tracking-widest text-[9px]">Name</th><th class="px-6 py-3 font-bold uppercase tracking-widest text-[9px]">Status</th><th class="px-6 py-3 font-bold uppercase tracking-widest text-[9px]">Sprint</th><th class="px-6 py-3 font-bold uppercase tracking-widest text-[9px]">Assignee</th></tr>
                     </thead>
                     <tbody id="mgmtTable" class="divide-y divide-slate-50 bg-white"></tbody>
                 </table>
@@ -229,25 +226,25 @@
         </section>
 
         <!-- PLANNING VIEW -->
-        <section id="view-plan" class="tab-content hidden space-y-8">
-            <div id="planSummary" class="grid grid-cols-1 md:grid-cols-4 gap-8"></div>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 glass-card p-10 h-[500px] relative flex flex-col"><canvas id="chartCapacity"></canvas></div>
-                <div class="glass-card p-10 space-y-6 overflow-y-auto max-h-[500px] bg-slate-50/20" id="capacityList"></div>
+        <section id="view-plan" class="tab-content hidden space-y-6 text-xs">
+            <div id="planSummary" class="grid grid-cols-1 md:grid-cols-4 gap-6"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 glass-card p-6 h-[400px] relative flex flex-col"><canvas id="chartCapacity"></canvas></div>
+                <div class="glass-card p-6 space-y-5 overflow-y-auto max-h-[400px] bg-slate-50/20 shadow-inner" id="capacityList"></div>
             </div>
         </section>
 
         <!-- CLIENT VIEW -->
-        <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-10"></section>
+        <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-6 text-sm"></section>
 
         <!-- ATTENTION VIEW (Unassigned) -->
-        <section id="view-unassigned" class="tab-content hidden space-y-10"><div class="glass-card overflow-hidden"><div class="px-10 py-8 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-red-600 tracking-[0.3em] italic text-center">Unassigned Attention List</h3><span id="unassignedCounter" class="text-xs font-black bg-red-100 text-red-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="unassignedTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        <section id="view-unassigned" class="tab-content hidden space-y-6"><div class="glass-card overflow-hidden"><div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-[10px] font-black uppercase text-red-600 tracking-[0.3em] italic text-center">Unassigned Attention List</h3><span id="unassignedCounter" class="text-[10px] font-black bg-red-100 text-red-600 px-3 py-1 rounded-lg">0 items</span></div><table class="w-full text-left text-xs"><tbody id="unassignedTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
         
         <!-- DEADLINES VIEW -->
-        <section id="view-no-deadline" class="tab-content hidden space-y-10"><div class="glass-card overflow-hidden"><div class="px-10 py-8 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-blue-600 tracking-widest text-center text-center">Unscheduled Commitments</h3><span id="noDeadlineCounter" class="text-xs font-black bg-blue-100 text-blue-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="noDeadlineTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        <section id="view-no-deadline" class="tab-content hidden space-y-6"><div class="glass-card overflow-hidden"><div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-[10px] font-black uppercase text-blue-600 tracking-widest text-center text-center">Unscheduled Commitments</h3><span id="noDeadlineCounter" class="text-[10px] font-black bg-blue-100 text-blue-600 px-3 py-1 rounded-lg">0 items</span></div><table class="w-full text-left text-xs"><tbody id="noDeadlineTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
         
         <!-- BACKLOG VIEW -->
-        <section id="view-backlog" class="tab-content hidden space-y-10"><div class="glass-card overflow-hidden"><div class="px-10 py-8 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-slate-500 tracking-widest text-center text-center text-center text-center">Project Backlog / Roadmap</h3><span id="backlogCounter" class="text-xs font-black bg-slate-100 text-slate-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="backlogTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        <section id="view-backlog" class="tab-content hidden space-y-6"><div class="glass-card overflow-hidden"><div class="px-6 py-4 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-[10px] font-black uppercase text-slate-500 tracking-widest text-center text-center text-center text-center text-center">Project Backlog / Roadmap</h3><span id="backlogCounter" class="text-[10px] font-black bg-slate-100 text-slate-600 px-3 py-1 rounded-lg">0 items</span></div><table class="w-full text-left text-xs"><tbody id="backlogTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
     </main>
 
     <script>
@@ -274,10 +271,7 @@
                 const res = await fetch("https://dashboard.fatin-rasyidah.workers.dev/");
                 const json = await res.json();
                 window.tasks = json.tasks.map(t => {
-                    // ROBUST CLIENT RESOLUTION
                     let clientName = "Internal";
-                    
-                    // 1. Search fields for client keywords
                     const cf = t.custom_fields?.find(f => 
                         f.name.toLowerCase().includes('client') || 
                         f.name.toLowerCase().includes('account') ||
@@ -296,7 +290,6 @@
                         }
                     }
                     
-                    // 2. Tags Fallback
                     if ((!clientName || clientName === "Internal") && t.tags && t.tags.length > 0) {
                         clientName = t.tags[0].name;
                     }
@@ -359,7 +352,7 @@
                 const cfg = configs[id];
                 const container = document.getElementById(id);
                 if (container) {
-                    container.innerHTML = cfg.items.map(item => `<div class="filter-item" onclick="toggleSelection(event, '${cfg.key}', '${item.replace(/'/g, "\\'")}', '${cfg.label}', '${cfg.title}')"><input type="checkbox" ${activeFilters[cfg.key].includes(item) ? 'checked' : ''}><span class="truncate">${item}</span></div>`).join('');
+                    container.innerHTML = cfg.items.map(item => `<div class="filter-item" onclick="toggleSelection(event, '${cfg.key}', '${item.replace(/'/g, "\\'")}', '${cfg.label}', '${cfg.title}')"><input type="checkbox" ${activeFilters[cfg.key].includes(item) ? 'checked' : ''}><span class="truncate font-semibold">${item}</span></div>`).join('');
                 }
             });
         }
@@ -398,7 +391,7 @@
             
             if (view === 'mgmt') {
                 document.getElementById('taskCounter').innerText = `${window.currentFilteredTasks.length} items`;
-                document.getElementById('mgmtTable').innerHTML = window.currentFilteredTasks.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-10 py-6 font-black text-slate-800 tracking-tight">${t.name}</td><td class="px-10 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-10 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-10 py-6 text-slate-500 font-medium">${t.assignee}</td></tr>`).join('');
+                document.getElementById('mgmtTable').innerHTML = window.currentFilteredTasks.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-3 font-bold text-slate-800 tracking-tight">${t.name}</td><td class="px-6 py-3"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-6 py-3 text-slate-400 font-bold uppercase text-[9px] tracking-widest">${t.sprint}</td><td class="px-6 py-3 text-slate-500 font-medium">${t.assignee}</td></tr>`).join('');
                 renderCharts(window.currentFilteredTasks);
             } else if (view === 'plan') renderPlanning(window.currentFilteredTasks);
             else if (view === 'client') renderClientProgress(window.currentFilteredTasks);
@@ -413,14 +406,14 @@
             if(charts.status) charts.status.destroy();
             charts.status = new Chart(document.getElementById('chartStatus'), { 
                 type: 'doughnut', 
-                data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: Object.keys(sMap).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 25 }] }, 
-                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: '800', size: 10 } } }, datalabels: { color: '#fff', font: { weight: '900', size: 11 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } } }, cutout: '65%' } 
+                data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: Object.keys(sMap).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 20 }] }, 
+                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { weight: '800', size: 9 } } }, datalabels: { color: '#fff', font: { weight: '900', size: 10 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } } }, cutout: '70%' } 
             });
             if(charts.dev) charts.dev.destroy();
             charts.dev = new Chart(document.getElementById('chartAssignee'), { 
                 type: 'bar', 
-                data: { labels: Object.keys(dMap), datasets: [{ label: 'Requirements', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 10, barThickness: 28 }] }, 
-                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.dev.data.labels[i[0].index], 'assignee'); }, plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { weight: '800', size: 10 } } } } } 
+                data: { labels: Object.keys(dMap), datasets: [{ label: 'Items', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 8, barThickness: 24 }] }, 
+                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.dev.data.labels[i[0].index], 'assignee'); }, plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { weight: '800', size: 9 } } } } } 
             });
         }
 
@@ -448,8 +441,8 @@
                         }
                     }, 
                     plugins: { 
-                        legend: { position: 'bottom', labels: { font: { weight: '800', size: 10 }, usePointStyle: true } }, 
-                        datalabels: { color: '#fff', font: { weight: '900' }, formatter: (v, ctx) => { let s = 0; ctx.chart.data.datasets[0].data.map(d => s += d); return (v*100/s).toFixed(0)+"%"; } } 
+                        legend: { position: 'bottom', labels: { font: { weight: '800', size: 9 }, usePointStyle: true } }, 
+                        datalabels: { color: '#fff', font: { weight: '900', size: 9 }, formatter: (v, ctx) => { let s = 0; ctx.chart.data.datasets[0].data.map(d => s += d); return (v*100/s).toFixed(0)+"%"; } } 
                     },
                     cutout: '60%'
                 } 
@@ -462,27 +455,26 @@
             if (type === 'client') f = window.tasks.filter(t => t.client === val && (sub ? t.status === sub : true));
             else if (type === 'assignee') f = window.tasks.filter(t => t.assignee === val && (sub ? t.status === sub : true));
             else f = window.tasks.filter(t => t.status === displayVal);
-            
             document.getElementById('listModalTitle').innerText = (type === 'client' || type === 'assignee') ? `${val} ${sub ? ' - ' + sub : ''}` : displayVal;
             document.getElementById('listModalCounter').innerText = `${f.length} items`;
-            document.getElementById('listModalTableBody').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-5"><div class="font-bold text-slate-800">${t.name}</div><div class="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">${t.client}</div></td><td class="px-8 py-5 text-slate-500 font-bold">${t.sprint}</td><td class="px-8 py-5"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('');
+            document.getElementById('listModalTableBody').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-4"><div class="font-black text-slate-800 tracking-tight text-xs">${t.name}</div><div class="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-0.5">${t.client}</div></td><td class="px-6 py-4 text-slate-400 font-bold uppercase text-[9px] tracking-widest">${t.sprint}</td><td class="px-6 py-4"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('');
         }
 
         function openTaskDetail(id) {
             const t = window.tasks.find(x => x.id === id); if (!t) return;
             document.getElementById('detailContent').innerHTML = `
-                <div class="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div><h3 class="text-4xl font-black text-slate-900 leading-tight tracking-tighter">${t.name}</h3><div class="text-[12px] font-black text-purple-600 uppercase mt-4 tracking-[0.3em]">Requirement Reference</div></div>
-                    <div class="grid grid-cols-2 gap-10 py-10 border-y border-slate-100 my-8">
-                        <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Workflow State</p><span class="st-badge st-${t.statusKey}">${t.status}</span></div>
-                        <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Resource Owner</p><p class="text-lg font-black text-slate-900 tracking-tight">${t.assignee}</p></div>
-                        <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Target Cycle</p><p class="text-lg font-bold text-slate-600 tracking-tight">${t.sprint}</p></div>
-                        <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Client Account</p><p class="text-lg font-black text-slate-900 tracking-tight">${t.client}</p></div>
-                        <div class="col-span-2"><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Planned Deadline</p><p class="text-2xl font-black text-slate-900 tracking-tighter">${t.dueDate ? t.dueDate.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric'}) : 'NOT SCHEDULED'}</p></div>
+                <div class="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div><h3 class="text-2xl font-black text-slate-900 leading-tight tracking-tighter">${t.name}</h3><div class="text-[10px] font-black text-purple-600 uppercase mt-2 tracking-[0.3em]">Requirement Data Link</div></div>
+                    <div class="grid grid-cols-2 gap-6 py-6 border-y border-slate-100 my-6">
+                        <div><p class="text-[9px] font-black text-slate-300 uppercase mb-2 tracking-widest">Status</p><span class="st-badge st-${t.statusKey}">${t.status}</span></div>
+                        <div><p class="text-[9px] font-black text-slate-300 uppercase mb-2 tracking-widest">Resource</p><p class="text-sm font-black text-slate-900 tracking-tight">${t.assignee}</p></div>
+                        <div><p class="text-[9px] font-black text-slate-300 uppercase mb-2 tracking-widest">Sprint</p><p class="text-sm font-bold text-slate-600 tracking-tight">${t.sprint}</p></div>
+                        <div><p class="text-[9px] font-black text-slate-300 uppercase mb-2 tracking-widest">Account</p><p class="text-sm font-black text-slate-900 tracking-tight">${t.client}</p></div>
+                        <div class="col-span-2"><p class="text-[9px] font-black text-slate-300 uppercase mb-2 tracking-widest">Deployment Date</p><p class="text-lg font-black text-slate-900 tracking-tighter">${t.dueDate ? t.dueDate.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric'}) : 'NOT SCHEDULED'}</p></div>
                     </div>
-                    <div class="flex justify-between items-center pt-8">
-                        <div class="text-xs font-black text-slate-400 uppercase tracking-widest">Effort Score: <span class="text-slate-900 text-base ml-2">${t.hours}h</span></div>
-                        <a href="${t.url}" target="_blank" class="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black text-[12px] uppercase tracking-widest flex items-center gap-4 hover:bg-indigo-600 transition-all shadow-2xl active:scale-95">Open In ClickUp <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-width="3"></path></svg></a>
+                    <div class="flex justify-between items-center pt-2">
+                        <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Effort: <span class="text-slate-900 text-sm ml-2">${t.hours}h</span></div>
+                        <a href="${t.url}" target="_blank" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-3 hover:bg-purple-600 transition-all shadow-md active:scale-95">Open In ClickUp <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-width="2.5"></path></svg></a>
                     </div>
                 </div>`;
             document.getElementById('taskDetailModal').classList.add('show');
@@ -494,12 +486,12 @@
 
         function renderPlanning(data) {
             const total = data.reduce((s, t) => s + t.hours, 0);
-            document.getElementById('planSummary').innerHTML = `<div class="glass-card p-10 flex flex-col items-center col-span-full bg-gradient-to-br from-white to-slate-50 border-none shadow-xl"><h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Total Capacity Utilised</h3><div class="text-6xl font-black text-slate-900 tracking-tighter">${total.toFixed(1)}<span class="text-3xl ml-3 text-slate-300">hrs</span></div></div>`;
+            document.getElementById('planSummary').innerHTML = `<div class="glass-card p-6 flex flex-col items-center col-span-full bg-gradient-to-br from-white to-slate-50 border-none shadow-md"><h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-2">Total Capacity Utilised</h3><div class="text-4xl font-black text-slate-900 tracking-tighter">${total.toFixed(1)}<span class="text-lg ml-2 text-slate-300">hrs</span></div></div>`;
             const devHrs = data.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + t.hours; return acc; }, {});
             const labels = Object.keys(devHrs);
             if(charts.plan) charts.plan.destroy();
-            charts.plan = new Chart(document.getElementById('chartCapacity'), { type: 'bar', data: { labels, datasets: [{ label: 'Used', data: Object.values(devHrs), backgroundColor: '#7c3aed', borderRadius: 12, barThickness: 32 }, { label: 'Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9', borderRadius: 12, barThickness: 32 }] }, options: { maintainAspectRatio: false, indexAxis: 'y', onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.plan.data.labels[i[0].index], 'assignee'); }, plugins: { datalabels: { display: false }, legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false }, ticks: { font: { weight: '800', size: 12 } } } } } });
-            document.getElementById('capacityList').innerHTML = labels.map(n => { const u = devHrs[n], p = Math.min((u/DEV_CAPACITY)*100, 100); return `<div class="space-y-3 p-3 rounded-2xl hover:bg-white transition-all"><div class="flex justify-between text-xs font-black uppercase tracking-widest"><span>${n}</span><span class="${u > DEV_CAPACITY ? 'text-red-600' : 'text-slate-600'}">${u.toFixed(1)}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${u > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${p}%"></div></div></div>`; }).join('');
+            charts.plan = new Chart(document.getElementById('chartCapacity'), { type: 'bar', data: { labels, datasets: [{ label: 'Used', data: Object.values(devHrs), backgroundColor: '#7c3aed', borderRadius: 8, barThickness: 24 }, { label: 'Limit', data: labels.map(() => DEV_CAPACITY), backgroundColor: '#f1f5f9', borderRadius: 8, barThickness: 24 }] }, options: { maintainAspectRatio: false, indexAxis: 'y', onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.plan.data.labels[i[0].index], 'assignee'); }, plugins: { datalabels: { display: false }, legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false }, ticks: { font: { weight: '800', size: 10 } } } } } });
+            document.getElementById('capacityList').innerHTML = labels.map(n => { const u = devHrs[n], p = Math.min((u/DEV_CAPACITY)*100, 100); return `<div class="space-y-2 p-2 rounded-xl hover:bg-white transition-all"><div class="flex justify-between text-[11px] font-black uppercase tracking-widest"><span>${n}</span><span class="${u > DEV_CAPACITY ? 'text-red-600' : 'text-slate-600'}">${u.toFixed(1)}h / ${DEV_CAPACITY}h</span></div><div class="progress-bar"><div class="progress-fill ${u > DEV_CAPACITY ? 'bg-red-500' : 'bg-purple-600'}" style="width: ${p}%"></div></div></div>`; }).join('');
         }
 
         function renderClientProgress(data) {
@@ -508,26 +500,26 @@
                 const ct = data.filter(t => t.client === c);
                 const done = ct.filter(t => t.isClosed).length;
                 const prog = ct.length > 0 ? Math.round((done / ct.length) * 100) : 0;
-                return `<div class="glass-card p-10 space-y-8 cursor-pointer-hover flex flex-col justify-between" onclick="openDrillDownPopup('${c.replace(/'/g, "\\'")}', 'client')"><div><div class="flex justify-between items-start mb-3"><h4 class="font-black text-slate-800 tracking-tighter text-xl">${c}</h4><span class="text-3xl font-black text-purple-600">${prog}%</span></div><div class="progress-bar"><div class="progress-fill ${prog === 100 ? 'bg-emerald-500' : 'bg-purple-600'}" style="width: ${prog}%"></div></div></div><div class="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest border-t border-slate-50 pt-6"><div class="flex flex-col"><span class="text-slate-900 text-lg">${ct.length - done}</span><span>Active</span></div><div class="flex flex-col text-right"><span class="text-slate-900 text-lg">${ct.length}</span><span>Volume</span></div></div></div>`;
+                return `<div class="glass-card p-6 space-y-5 cursor-pointer-hover flex flex-col justify-between" onclick="openDrillDownPopup('${c.replace(/'/g, "\\'")}', 'client')"><div><div class="flex justify-between items-start mb-2"><h4 class="font-black text-slate-800 tracking-tighter text-sm">${c}</h4><span class="text-xl font-black text-purple-600">${prog}%</span></div><div class="progress-bar"><div class="progress-fill ${prog === 100 ? 'bg-emerald-500' : 'bg-purple-600'}" style="width: ${prog}%"></div></div></div><div class="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest border-t border-slate-50 pt-4"><div class="flex flex-col"><span class="text-slate-900 text-sm">${ct.length - done}</span><span>Active</span></div><div class="flex flex-col text-right"><span class="text-slate-900 text-sm">${ct.length}</span><span>Volume</span></div></div></div>`;
             }).join('');
         }
 
         function renderUnassigned(data) {
             const f = data.filter(t => t.assignee === "Unassigned");
             document.getElementById('unassignedCounter').innerText = `${f.length} items`;
-            document.getElementById('unassignedTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-10 py-8 font-black text-slate-800 flex items-center gap-4"><div>${t.name}</div> <span class="bg-red-600 text-white text-[9px] px-3 py-1 rounded-full font-black tracking-widest alert-pulse shadow-lg">ATTENTION</span></td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-10 py-8"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-10 py-8 font-black uppercase text-[10px] text-red-600 tracking-widest">${t.priority}</td></tr>`).join('') || '<tr><td class="p-24 text-center font-black text-slate-300 uppercase tracking-widest text-lg">Resource Allocation Optimized</td></tr>';
+            document.getElementById('unassignedTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-4 font-black text-slate-800 flex items-center gap-3"><div>${t.name}</div> <span class="bg-red-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black tracking-widest alert-pulse shadow-sm">ATTENTION</span></td><td class="px-6 py-4 text-slate-400 font-bold uppercase text-[9px] tracking-widest">${t.sprint}</td><td class="px-6 py-4 text-slate-400 font-bold uppercase text-[9px] tracking-widest">${t.client}</td><td class="px-6 py-4"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-6 py-4 font-black uppercase text-[9px] text-red-600 tracking-widest">${t.priority}</td></tr>`).join('') || '<tr><td class="p-12 text-center font-black text-slate-300 uppercase tracking-widest text-xs">Allocation Optimized</td></tr>';
         }
 
         function renderNoDeadline(data) {
             const f = data.filter(t => !t.dueDate);
             document.getElementById('noDeadlineCounter').innerText = `${f.length} items`;
-            document.getElementById('noDeadlineTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-10 py-8 font-black text-slate-900 tracking-tight">${t.name}</td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-10 py-8"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-10 py-8 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.assignee}</td></tr>`).join('') || '<tr><td class="p-24 text-center font-black text-slate-300 uppercase tracking-widest text-lg">Calendar Fully Synchronized</td></tr>';
+            document.getElementById('noDeadlineTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-4 font-black text-slate-900 tracking-tight">${t.name}</td><td class="px-6 py-4 text-slate-400 font-bold uppercase text-[9px] tracking-widest">${t.sprint}</td><td class="px-6 py-4 text-slate-400 font-bold uppercase text-[9px] tracking-widest">${t.client}</td><td class="px-6 py-4"><span class="st-badge st-${t.statusKey}">${t.status}</span></td><td class="px-6 py-4 text-slate-400 font-bold uppercase text-[9px] tracking-widest">${t.assignee}</td></tr>`).join('') || '<tr><td class="p-12 text-center font-black text-slate-300 uppercase tracking-widest text-xs">Schedule Complete</td></tr>';
         }
 
         function renderBacklog(data) {
             const f = data.filter(t => t.sprint.toLowerCase().includes('backlog') || t.status.toLowerCase().includes('backlog'));
             document.getElementById('backlogCounter').innerText = `${f.length} items`;
-            document.getElementById('backlogTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6 font-black text-slate-800">${t.name}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.client}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('') || '<tr><td class="p-24 text-center font-black text-slate-300 uppercase tracking-widest text-lg">Requirements Ready</td></tr>';
+            document.getElementById('backlogTable').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-6 py-3 font-black text-slate-800">${t.name}</td><td class="px-6 py-3 text-slate-400 font-bold uppercase text-[9px] tracking-widest">${t.sprint}</td><td class="px-6 py-3 text-slate-400 font-bold uppercase text-[9px] tracking-widest">${t.client}</td><td class="px-6 py-3"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('') || '<tr><td class="p-12 text-center font-black text-slate-300 uppercase tracking-widest text-xs">Backlog Clear</td></tr>';
         }
 
         window.onload = () => fetchRealData(true);
