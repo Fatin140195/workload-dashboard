@@ -19,7 +19,7 @@
             display: none; 
             position: absolute; 
             background: rgba(255, 255, 255, 0.99); 
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             min-width: 280px; 
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
             z-index: 500; 
@@ -34,16 +34,17 @@
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
         .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
+        .glass-card:hover { transform: translateY(-3px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
         
         .tab-btn { border-bottom: 3px solid transparent; transition: all 0.3s; padding: 1.25rem 1rem; color: #94a3b8; font-size: 0.75rem; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 0.075em; }
         .tab-btn.active { border-bottom-color: #7c3aed; color: #7c3aed; }
         
-        /* Modal Layering: taskDetail must be above taskList */
+        /* Modal Layering */
         .modal-overlay { 
             display: none; 
             position: fixed; 
             inset: 0; 
-            background: rgba(15, 23, 42, 0.8); 
+            background: rgba(15, 23, 42, 0.85); 
             backdrop-filter: blur(8px); 
             z-index: 1000; 
             align-items: center; 
@@ -51,7 +52,7 @@
             padding: 2rem; 
         }
         #taskListModal { z-index: 1100; }
-        #taskDetailModal { z-index: 1200; } /* Priority over drill-down */
+        #taskDetailModal { z-index: 1200; } 
         .modal-overlay.show { display: flex; }
         
         .filter-item { display: flex; align-items: center; padding: 10px 14px; font-size: 0.85rem; cursor: pointer; border-radius: 0.75rem; transition: background 0.2s; user-select: none; font-weight: 500; }
@@ -72,7 +73,7 @@
         .progress-bar { height: 12px; border-radius: 6px; background: #f1f5f9; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
-        @keyframes pulse-alert { 0%, 100% { background-color: #dc2626; transform: scale(1); } 50% { background-color: #ef4444; transform: scale(0.95); } }
+        @keyframes pulse-alert { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.95); } }
         .alert-pulse { animation: pulse-alert 1.5s infinite; }
         
         ::-webkit-scrollbar { width: 6px; }
@@ -113,10 +114,10 @@
         </div>
     </div>
 
-    <!-- TASK DETAIL POPUP -->
+    <!-- TASK DETAIL POPUP (Requirement Reference Style) -->
     <div id="taskDetailModal" class="modal-overlay" onclick="closeAllModals(event)">
         <div class="glass-card w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl border-none flex flex-col" onclick="event.stopPropagation()">
-            <div class="px-8 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+            <div class="px-8 py-4 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
                 <h2 class="text-sm font-black text-slate-400 uppercase tracking-widest">Requirement Detail View</h2>
                 <button onclick="closeModal('taskDetailModal')" class="text-slate-400 hover:text-slate-600 p-2 transition-all duration-200">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -135,7 +136,7 @@
                 <div>
                     <h1 class="text-xl font-black tracking-tighter">Sprint Console</h1>
                     <div class="flex items-center gap-2">
-                        <p id="syncStatus" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Awaiting Sync</p>
+                        <p id="syncStatus" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic tracking-wider">Awaiting Sync</p>
                         <span id="autoSyncLabel" class="text-[10px] text-purple-600 font-black uppercase tracking-widest hidden flex items-center gap-1">
                             <span class="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></span>
                             Live Sync in: <span id="nextSyncTimer">5:00</span>
@@ -144,12 +145,12 @@
                 </div>
             </div>
             <nav class="flex bg-slate-100 p-1 rounded-xl">
-                <div onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active px-4 rounded-lg">Management</div>
-                <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn px-4 rounded-lg">Planning</div>
-                <div onclick="switchTab('client')" id="btn-client" class="tab-btn px-4 rounded-lg">Clients</div>
-                <div onclick="switchTab('unassigned')" id="btn-unassigned" class="tab-btn px-4 rounded-lg">Attention</div>
-                <div onclick="switchTab('no-deadline')" id="btn-no-deadline" class="tab-btn px-4 rounded-lg">Deadlines</div>
-                <div onclick="switchTab('backlog')" id="btn-backlog" class="tab-btn px-4 rounded-lg">Backlog</div>
+                <div onclick="switchTab('mgmt')" id="btn-mgmt" class="tab-btn active px-5 rounded-xl">Management</div>
+                <div onclick="switchTab('plan')" id="btn-plan" class="tab-btn px-5 rounded-xl">Planning</div>
+                <div onclick="switchTab('client')" id="btn-client" class="tab-btn px-5 rounded-xl">Clients</div>
+                <div onclick="switchTab('unassigned')" id="btn-unassigned" class="tab-btn px-5 rounded-xl">Attention</div>
+                <div onclick="switchTab('no-deadline')" id="btn-no-deadline" class="tab-btn px-5 rounded-xl">Deadlines</div>
+                <div onclick="switchTab('backlog')" id="btn-backlog" class="tab-btn px-5 rounded-xl">Backlog</div>
             </nav>
             <button onclick="fetchRealData(true)" class="bg-slate-900 text-white text-[11px] px-6 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95">Manual Sync</button>
         </div>
@@ -159,10 +160,11 @@
         <div id="loadingOverlay" class="fixed inset-0 bg-white/70 backdrop-blur-md z-[300] flex items-center justify-center hidden">
             <div class="flex flex-col items-center gap-5">
                 <div class="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                <p class="text-sm font-black text-slate-900 uppercase tracking-[0.4em]">Syncing workspace data...</p>
+                <p class="text-sm font-black text-slate-900 uppercase tracking-[0.4em]">Optimizing Dashboard...</p>
             </div>
         </div>
 
+        <!-- MANAGEMENT VIEW -->
         <section id="view-mgmt" class="tab-content space-y-8">
             <div class="glass-card p-5 flex flex-wrap gap-5 items-center bg-white/60 filter-container">
                 <div class="flex-1 min-w-[300px]">
@@ -201,19 +203,19 @@
                 <button onclick="resetFilters()" class="text-xs font-black text-slate-400 hover:text-purple-600 uppercase tracking-[0.2em] px-4">Reset</button>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="glass-card p-8 h-[450px] relative flex flex-col">
-                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em] text-center">Sprint Health Mix</h3>
-                    <div class="flex-1 relative"><canvas id="chartStatus"></canvas></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-center">
+                <div class="glass-card p-10 h-[500px] relative flex flex-col items-center">
+                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.3em]">Sprint Health Distribution</h3>
+                    <div class="flex-1 w-full relative"><canvas id="chartStatus"></canvas></div>
                 </div>
-                <div class="glass-card p-8 h-[450px] relative flex flex-col">
-                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.2em] text-center">Dev Workload</h3>
-                    <div class="flex-1 relative"><canvas id="chartAssignee"></canvas></div>
+                <div class="glass-card p-10 h-[500px] relative flex flex-col items-center">
+                    <h3 class="text-xs font-black text-slate-400 uppercase mb-8 tracking-[0.3em]">Developer Loading</h3>
+                    <div class="flex-1 w-full relative"><canvas id="chartAssignee"></canvas></div>
                 </div>
             </div>
 
             <div class="glass-card overflow-hidden border-none shadow-xl">
-                <div class="px-8 py-5 border-b border-slate-50 bg-white flex justify-between items-center">
+                <div class="px-8 py-5 border-b border-slate-100 bg-white flex justify-between items-center">
                     <h3 class="text-xs font-black uppercase text-slate-400 tracking-widest">Active Inventory</h3>
                     <span id="taskCounter" class="text-xs font-black bg-purple-100 text-purple-700 px-5 py-2 rounded-full shadow-inner">0 items</span>
                 </div>
@@ -226,6 +228,7 @@
             </div>
         </section>
 
+        <!-- PLANNING VIEW -->
         <section id="view-plan" class="tab-content hidden space-y-8">
             <div id="planSummary" class="grid grid-cols-1 md:grid-cols-4 gap-8"></div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -234,10 +237,17 @@
             </div>
         </section>
 
-        <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-8" id="clientGrid"></section>
-        <section id="view-unassigned" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-red-600 tracking-[0.3em] italic">Unassigned Attention List</h3><span id="unassignedCounter" class="text-xs font-black bg-red-100 text-red-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="unassignedTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
-        <section id="view-no-deadline" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-blue-600 tracking-widest">Unscheduled commitments</h3><span id="noDeadlineCounter" class="text-xs font-black bg-blue-100 text-blue-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="noDeadlineTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
-        <section id="view-backlog" class="tab-content hidden space-y-8"><div class="glass-card overflow-hidden"><div class="px-8 py-6 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-slate-500 tracking-widest">Requirements & Product Docs</h3><span id="backlogCounter" class="text-xs font-black bg-slate-100 text-slate-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="backlogTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        <!-- CLIENT VIEW -->
+        <section id="view-client" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-10"></section>
+
+        <!-- ATTENTION VIEW (Unassigned) -->
+        <section id="view-unassigned" class="tab-content hidden space-y-10"><div class="glass-card overflow-hidden"><div class="px-10 py-8 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-red-600 tracking-[0.3em] italic text-center">Unassigned Attention List</h3><span id="unassignedCounter" class="text-xs font-black bg-red-100 text-red-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="unassignedTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        
+        <!-- DEADLINES VIEW -->
+        <section id="view-no-deadline" class="tab-content hidden space-y-10"><div class="glass-card overflow-hidden"><div class="px-10 py-8 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-blue-600 tracking-widest text-center text-center">Unscheduled Commitments</h3><span id="noDeadlineCounter" class="text-xs font-black bg-blue-100 text-blue-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="noDeadlineTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
+        
+        <!-- BACKLOG VIEW -->
+        <section id="view-backlog" class="tab-content hidden space-y-10"><div class="glass-card overflow-hidden"><div class="px-10 py-8 border-b border-slate-100 bg-white flex justify-between items-center"><h3 class="text-xs font-black uppercase text-slate-500 tracking-widest text-center text-center text-center text-center">Project Backlog / Roadmap</h3><span id="backlogCounter" class="text-xs font-black bg-slate-100 text-slate-600 px-5 py-2 rounded-full">0 items</span></div><table class="w-full text-left text-sm"><tbody id="backlogTable" class="divide-y divide-slate-100 bg-white"></tbody></table></div></section>
     </main>
 
     <script>
@@ -264,16 +274,37 @@
                 const res = await fetch("https://dashboard.fatin-rasyidah.workers.dev/");
                 const json = await res.json();
                 window.tasks = json.tasks.map(t => {
-                    const cf = t.custom_fields?.find(f => f.name.toLowerCase().includes('client'));
-                    let cName = "Internal";
-                    if (cf?.value !== undefined && cf.type_config?.options) {
-                        const opt = cf.type_config.options.find(o => String(o.id) === String(cf.value) || String(o.orderindex) === String(cf.value));
-                        cName = opt ? (opt.label || opt.name) : cf.value;
+                    // ROBUST CLIENT RESOLUTION
+                    let clientName = "Internal";
+                    
+                    // 1. Search fields for client keywords
+                    const cf = t.custom_fields?.find(f => 
+                        f.name.toLowerCase().includes('client') || 
+                        f.name.toLowerCase().includes('account') ||
+                        f.name.toLowerCase().includes('customer')
+                    );
+                    
+                    if (cf?.value !== undefined) {
+                        if (cf.type_config?.options) {
+                            const opt = cf.type_config.options.find(o => 
+                                String(o.id) === String(cf.value) || 
+                                String(o.orderindex) === String(cf.value)
+                            );
+                            clientName = opt ? (opt.label || opt.name) : cf.value;
+                        } else {
+                            clientName = Array.isArray(cf.value) ? cf.value.join(', ') : cf.value;
+                        }
                     }
+                    
+                    // 2. Tags Fallback
+                    if ((!clientName || clientName === "Internal") && t.tags && t.tags.length > 0) {
+                        clientName = t.tags[0].name;
+                    }
+
                     const rStatus = t.status?.status || "todo";
                     const sKey = rStatus.toLowerCase().replace(/[\s-]/g, '');
                     return {
-                        id: t.id, name: t.name, url: t.url, client: cName, assignee: t.assignees?.[0]?.username || "Unassigned",
+                        id: t.id, name: t.name, url: t.url, client: clientName, assignee: t.assignees?.[0]?.username || "Unassigned",
                         status: rStatus, statusKey: sKey, sprint: t.list?.name || "Global",
                         hours: t.time_estimate ? Math.round(t.time_estimate / 3600000 * 10) / 10 : 0,
                         isClosed: (sKey === 'deployed' || sKey === 'closed' || t.status?.type === 'closed'),
@@ -383,13 +414,13 @@
             charts.status = new Chart(document.getElementById('chartStatus'), { 
                 type: 'doughnut', 
                 data: { labels: Object.keys(sMap), datasets: [{ data: Object.values(sMap), backgroundColor: Object.keys(sMap).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 25 }] }, 
-                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 15, font: { weight: '800', size: 9 } } }, datalabels: { color: '#fff', font: { weight: '900', size: 10 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } } }, cutout: '65%' } 
+                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.status.data.labels[i[0].index], 'status'); }, plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: '800', size: 10 } } }, datalabels: { color: '#fff', font: { weight: '900', size: 11 }, formatter: (v, ctx) => { let sum = 0; ctx.chart.data.datasets[0].data.map(d => sum += d); return (v*100/sum).toFixed(0)+"%"; } } }, cutout: '65%' } 
             });
             if(charts.dev) charts.dev.destroy();
             charts.dev = new Chart(document.getElementById('chartAssignee'), { 
                 type: 'bar', 
-                data: { labels: Object.keys(dMap), datasets: [{ label: 'Requirements', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 8, barThickness: 24 }] }, 
-                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.dev.data.labels[i[0].index], 'assignee'); }, plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { weight: '700', size: 10 } } } } } 
+                data: { labels: Object.keys(dMap), datasets: [{ label: 'Requirements', data: Object.values(dMap), backgroundColor: '#7c3aed', borderRadius: 10, barThickness: 28 }] }, 
+                options: { maintainAspectRatio: false, onClick: (e, i) => { if(i.length > 0) openDrillDownPopup(charts.dev.data.labels[i[0].index], 'assignee'); }, plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { weight: '800', size: 10 } } } } } 
             });
         }
 
@@ -404,10 +435,9 @@
             const set = window.tasks.filter(t => (type === 'client' ? t.client === initial : (type === 'assignee' ? t.assignee === initial : true)));
             const map = set.reduce((a, t) => { const k = t.status; a[k] = (a[k]||0)+1; return a; }, {});
             if (charts.modal) charts.modal.destroy();
-            
             charts.modal = new Chart(document.getElementById('modalChart'), { 
                 type: 'doughnut', 
-                data: { labels: Object.keys(map), datasets: [{ data: Object.values(map), backgroundColor: Object.keys(map).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 20 }] }, 
+                data: { labels: Object.keys(map), datasets: [{ data: Object.values(map), backgroundColor: Object.keys(map).map(s => getStatusColor(s)), borderWidth: 0, hoverOffset: 15 }] }, 
                 options: { 
                     maintainAspectRatio: false, 
                     onClick: function(e, i) { 
@@ -432,25 +462,28 @@
             if (type === 'client') f = window.tasks.filter(t => t.client === val && (sub ? t.status === sub : true));
             else if (type === 'assignee') f = window.tasks.filter(t => t.assignee === val && (sub ? t.status === sub : true));
             else f = window.tasks.filter(t => t.status === displayVal);
+            
             document.getElementById('listModalTitle').innerText = (type === 'client' || type === 'assignee') ? `${val} ${sub ? ' - ' + sub : ''}` : displayVal;
             document.getElementById('listModalCounter').innerText = `${f.length} items`;
-            document.getElementById('listModalTableBody').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-6"><div class="font-black text-slate-800 tracking-tight text-base">${t.name}</div><div class="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">${t.client}</div></td><td class="px-8 py-6 text-slate-400 font-bold uppercase text-[10px] tracking-widest">${t.sprint}</td><td class="px-8 py-6"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('');
+            document.getElementById('listModalTableBody').innerHTML = f.map(t => `<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTaskDetail('${t.id}')"><td class="px-8 py-5"><div class="font-bold text-slate-800">${t.name}</div><div class="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">${t.client}</div></td><td class="px-8 py-5 text-slate-500 font-bold">${t.sprint}</td><td class="px-8 py-5"><span class="st-badge st-${t.statusKey}">${t.status}</span></td></tr>`).join('');
         }
 
         function openTaskDetail(id) {
             const t = window.tasks.find(x => x.id === id); if (!t) return;
             document.getElementById('detailContent').innerHTML = `
-                <div><h3 class="text-4xl font-black text-slate-900 leading-tight tracking-tighter">${t.name}</h3><div class="text-[12px] font-black text-purple-600 uppercase mt-4 tracking-[0.3em]">Requirement Reference</div></div>
-                <div class="grid grid-cols-2 gap-10 py-8 border-y border-slate-100 my-8">
-                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Workflow State</p><span class="st-badge st-${t.statusKey}">${t.status}</span></div>
-                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Resource Owner</p><p class="text-lg font-black text-slate-900 tracking-tight">${t.assignee}</p></div>
-                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Target Cycle</p><p class="text-lg font-bold text-slate-600 tracking-tight">${t.sprint}</p></div>
-                    <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Client Account</p><p class="text-lg font-black text-slate-900 tracking-tight">${t.client}</p></div>
-                    <div class="col-span-2"><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Planned Deadline</p><p class="text-2xl font-black text-slate-900 tracking-tighter">${t.dueDate ? t.dueDate.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric'}) : 'NOT SCHEDULED'}</p></div>
-                </div>
-                <div class="flex justify-between items-center pt-8">
-                    <div class="text-xs font-black text-slate-400 uppercase tracking-widest">Effort Score: <span class="text-slate-900 text-base ml-2">${t.hours}h</span></div>
-                    <a href="${t.url}" target="_blank" class="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black text-[12px] uppercase tracking-widest flex items-center gap-4 hover:bg-indigo-600 transition-all shadow-2xl active:scale-95">Open In ClickUp <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-width="3"></path></svg></a>
+                <div class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div><h3 class="text-4xl font-black text-slate-900 leading-tight tracking-tighter">${t.name}</h3><div class="text-[12px] font-black text-purple-600 uppercase mt-4 tracking-[0.3em]">Requirement Reference</div></div>
+                    <div class="grid grid-cols-2 gap-10 py-10 border-y border-slate-100 my-8">
+                        <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Workflow State</p><span class="st-badge st-${t.statusKey}">${t.status}</span></div>
+                        <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Resource Owner</p><p class="text-lg font-black text-slate-900 tracking-tight">${t.assignee}</p></div>
+                        <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Target Cycle</p><p class="text-lg font-bold text-slate-600 tracking-tight">${t.sprint}</p></div>
+                        <div><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Client Account</p><p class="text-lg font-black text-slate-900 tracking-tight">${t.client}</p></div>
+                        <div class="col-span-2"><p class="text-[10px] font-black text-slate-300 uppercase mb-3 tracking-widest">Planned Deadline</p><p class="text-2xl font-black text-slate-900 tracking-tighter">${t.dueDate ? t.dueDate.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric'}) : 'NOT SCHEDULED'}</p></div>
+                    </div>
+                    <div class="flex justify-between items-center pt-8">
+                        <div class="text-xs font-black text-slate-400 uppercase tracking-widest">Effort Score: <span class="text-slate-900 text-base ml-2">${t.hours}h</span></div>
+                        <a href="${t.url}" target="_blank" class="bg-slate-900 text-white px-10 py-5 rounded-2xl font-black text-[12px] uppercase tracking-widest flex items-center gap-4 hover:bg-indigo-600 transition-all shadow-2xl active:scale-95">Open In ClickUp <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-width="3"></path></svg></a>
+                    </div>
                 </div>`;
             document.getElementById('taskDetailModal').classList.add('show');
         }
@@ -461,7 +494,7 @@
 
         function renderPlanning(data) {
             const total = data.reduce((s, t) => s + t.hours, 0);
-            document.getElementById('planSummary').innerHTML = `<div class="glass-card p-10 flex flex-col items-center col-span-full bg-gradient-to-br from-white to-slate-50 border-none shadow-xl"><h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Total Capacity Utilised</h3><div class="text-6xl font-black text-slate-900">${total.toFixed(1)}<span class="text-2xl ml-2 text-slate-300">hrs</span></div></div>`;
+            document.getElementById('planSummary').innerHTML = `<div class="glass-card p-10 flex flex-col items-center col-span-full bg-gradient-to-br from-white to-slate-50 border-none shadow-xl"><h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Total Capacity Utilised</h3><div class="text-6xl font-black text-slate-900 tracking-tighter">${total.toFixed(1)}<span class="text-3xl ml-3 text-slate-300">hrs</span></div></div>`;
             const devHrs = data.reduce((acc, t) => { acc[t.assignee] = (acc[t.assignee] || 0) + t.hours; return acc; }, {});
             const labels = Object.keys(devHrs);
             if(charts.plan) charts.plan.destroy();
@@ -471,7 +504,7 @@
 
         function renderClientProgress(data) {
             const clients = [...new Set(data.map(t => t.client))];
-            document.getElementById('clientGrid').innerHTML = clients.map(c => {
+            document.getElementById('view-client').innerHTML = clients.map(c => {
                 const ct = data.filter(t => t.client === c);
                 const done = ct.filter(t => t.isClosed).length;
                 const prog = ct.length > 0 ? Math.round((done / ct.length) * 100) : 0;
